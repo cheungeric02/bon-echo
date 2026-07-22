@@ -1,0 +1,1315 @@
+<style>
+  :root {
+    --bg: #EAEDE4;
+    --surface: #FBFCF9;
+    --surface-2: #F2F4EC;
+    --border: #D7DCCC;
+    --border-strong: #C3CAB4;
+    --ink: #1E241F;
+    --muted: #6A7266;
+    --accent: #2F5A49;
+    --accent-hover: #264a3c;
+    --accent-soft: #DCE7DF;
+    --accent-ink: #24463A;
+    --ember: #BD5B2E;
+    --ember-soft: #F3E1D5;
+    --info: #3A6473;
+    --info-soft: #DDE8EC;
+    --danger: #A83A32;
+    --danger-soft: #F1DAD7;
+    --warn: #9A6708;
+    --warn-soft: #F0E5CC;
+    --shadow: 0 1px 2px rgba(30,36,31,.05), 0 4px 16px rgba(30,36,31,.06);
+    --shadow-lg: 0 8px 40px rgba(30,36,31,.18);
+    --radius: 12px;
+    --radius-sm: 8px;
+    --font-display: Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, "Times New Roman", serif;
+    --font-body: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --font-mono: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #131712;
+      --surface: #1B211A;
+      --surface-2: #232A21;
+      --border: #333B30;
+      --border-strong: #414A3C;
+      --ink: #E8EDE2;
+      --muted: #9AA694;
+      --accent: #7FB79E;
+      --accent-hover: #93c6ae;
+      --accent-soft: #23342C;
+      --accent-ink: #A9D6C2;
+      --ember: #E08A54;
+      --ember-soft: #37271C;
+      --info: #7FB0C0;
+      --info-soft: #22303550;
+      --danger: #E08078;
+      --danger-soft: #3A2321;
+      --warn: #E0A94F;
+      --warn-soft: #322813;
+      --shadow: 0 1px 2px rgba(0,0,0,.2), 0 4px 16px rgba(0,0,0,.25);
+      --shadow-lg: 0 8px 40px rgba(0,0,0,.5);
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #EAEDE4; --surface: #FBFCF9; --surface-2: #F2F4EC; --border: #D7DCCC; --border-strong: #C3CAB4;
+    --ink: #1E241F; --muted: #6A7266; --accent: #2F5A49; --accent-hover: #264a3c; --accent-soft: #DCE7DF;
+    --accent-ink: #24463A; --ember: #BD5B2E; --ember-soft: #F3E1D5; --info: #3A6473; --info-soft: #DDE8EC;
+    --danger: #A83A32; --danger-soft: #F1DAD7; --warn: #9A6708; --warn-soft: #F0E5CC;
+    --shadow: 0 1px 2px rgba(30,36,31,.05), 0 4px 16px rgba(30,36,31,.06); --shadow-lg: 0 8px 40px rgba(30,36,31,.18);
+  }
+  :root[data-theme="dark"] {
+    --bg: #131712; --surface: #1B211A; --surface-2: #232A21; --border: #333B30; --border-strong: #414A3C;
+    --ink: #E8EDE2; --muted: #9AA694; --accent: #7FB79E; --accent-hover: #93c6ae; --accent-soft: #23342C;
+    --accent-ink: #A9D6C2; --ember: #E08A54; --ember-soft: #37271C; --info: #7FB0C0; --info-soft: #22303550;
+    --danger: #E08078; --danger-soft: #3A2321; --warn: #E0A94F; --warn-soft: #322813;
+    --shadow: 0 1px 2px rgba(0,0,0,.2), 0 4px 16px rgba(0,0,0,.25); --shadow-lg: 0 8px 40px rgba(0,0,0,.5);
+  }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-body);
+    line-height: 1.5; -webkit-font-smoothing: antialiased; }
+  h1,h2,h3,h4 { margin: 0; font-weight: 600; text-wrap: balance; }
+  button { font-family: inherit; cursor: pointer; }
+  input, select, textarea { font-family: inherit; font-size: .95rem; }
+  a { color: var(--accent); }
+
+  .label { font-family: var(--font-mono); font-size: .68rem; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--muted); font-weight: 500; }
+  .num { font-variant-numeric: tabular-nums; }
+
+  /* ---------- Layout ---------- */
+  .app { display: grid; grid-template-columns: 244px 1fr; min-height: 100vh; }
+  .sidebar { background: var(--surface); border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; }
+  .brand { padding: 20px 20px 14px; border-bottom: 1px solid var(--border); }
+  .brand-mark { display: flex; align-items: center; gap: 10px; }
+  .brand-mark svg { color: var(--accent); flex: none; }
+  .brand-name { font-family: var(--font-display); font-size: 1.32rem; font-weight: 600; letter-spacing: -.01em; }
+  .brand-sub { margin-top: 2px; }
+
+  .trip-switch { padding: 12px 14px; border-bottom: 1px solid var(--border); }
+  .trip-switch select { width: 100%; padding: 9px 10px; border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm); background: var(--surface-2); color: var(--ink); font-weight: 500; }
+  .trip-switch .row { display: flex; gap: 6px; margin-top: 8px; }
+
+  .nav { flex: 1; overflow-y: auto; padding: 10px 10px 20px; }
+  .nav-item { display: flex; align-items: center; gap: 11px; width: 100%; text-align: left;
+    padding: 9px 11px; border: none; background: transparent; color: var(--ink); border-radius: var(--radius-sm);
+    font-size: .92rem; margin-bottom: 2px; position: relative; }
+  .nav-item svg { width: 18px; height: 18px; color: var(--muted); flex: none; }
+  .nav-item:hover { background: var(--surface-2); }
+  .nav-item.active { background: var(--accent-soft); color: var(--accent-ink); font-weight: 600; }
+  .nav-item.active svg { color: var(--accent); }
+  .nav-item .badge { margin-left: auto; font-family: var(--font-mono); font-size: .7rem;
+    background: var(--surface-2); color: var(--muted); padding: 1px 7px; border-radius: 20px; }
+  .nav-item.active .badge { background: var(--surface); color: var(--accent-ink); }
+
+  .sidebar-foot { padding: 12px 14px; border-top: 1px solid var(--border); display: flex; gap: 6px; flex-wrap: wrap; }
+
+  .main { min-width: 0; display: flex; flex-direction: column; }
+  .topbar { display: none; }
+  .content { padding: 30px 40px 80px; max-width: 1080px; width: 100%; margin: 0 auto; }
+
+  .page-head { display: flex; align-items: flex-end; justify-content: space-between;
+    gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
+  .page-head h2 { font-family: var(--font-display); font-size: 1.9rem; letter-spacing: -.015em; }
+  .page-head p { margin: 4px 0 0; color: var(--muted); font-size: .95rem; }
+
+  /* ---------- Buttons ---------- */
+  .btn { display: inline-flex; align-items: center; gap: 7px; padding: 8px 14px; border-radius: var(--radius-sm);
+    border: 1px solid var(--border-strong); background: var(--surface); color: var(--ink); font-size: .88rem;
+    font-weight: 500; transition: background .12s, border-color .12s; }
+  .btn:hover { background: var(--surface-2); }
+  .btn svg { width: 15px; height: 15px; }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  :root[data-theme="dark"] .btn.primary, .btn.primary { }
+  @media (prefers-color-scheme: dark) { .btn.primary { color: #10150F; } }
+  :root[data-theme="dark"] .btn.primary { color: #10150F; }
+  :root[data-theme="light"] .btn.primary { color: #fff; }
+  .btn.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+  .btn.ghost { border-color: transparent; background: transparent; }
+  .btn.ghost:hover { background: var(--surface-2); }
+  .btn.sm { padding: 5px 10px; font-size: .8rem; }
+  .btn.danger { color: var(--danger); border-color: var(--border-strong); }
+  .btn.danger:hover { background: var(--danger-soft); border-color: var(--danger); }
+  .icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px;
+    border-radius: var(--radius-sm); border: 1px solid transparent; background: transparent; color: var(--muted); }
+  .icon-btn:hover { background: var(--surface-2); color: var(--ink); }
+  .icon-btn svg { width: 16px; height: 16px; }
+
+  /* ---------- Cards ---------- */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    box-shadow: var(--shadow); }
+  .card-pad { padding: 18px 20px; }
+  .grid { display: grid; gap: 16px; }
+  .cols-2 { grid-template-columns: repeat(2, 1fr); }
+  .cols-3 { grid-template-columns: repeat(3, 1fr); }
+  .cols-4 { grid-template-columns: repeat(4, 1fr); }
+
+  .section-block { margin-bottom: 26px; }
+  .section-title { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; gap: 12px; }
+  .section-title h3 { font-size: 1.05rem; }
+  .section-title .label { margin-top: 3px; }
+
+  /* stat tiles */
+  .stat { padding: 16px 18px; }
+  .stat .val { font-family: var(--font-display); font-size: 2rem; line-height: 1.1; margin-top: 6px; letter-spacing: -.02em; }
+  .stat .sub { font-size: .82rem; color: var(--muted); margin-top: 4px; }
+
+  /* pills */
+  .pill { display: inline-flex; align-items: center; gap: 5px; padding: 2px 9px; border-radius: 20px;
+    font-size: .74rem; font-weight: 600; font-family: var(--font-mono); letter-spacing: .02em; }
+  .pill.green { background: var(--accent-soft); color: var(--accent-ink); }
+  .pill.ember { background: var(--ember-soft); color: var(--ember); }
+  .pill.info { background: var(--info-soft); color: var(--info); }
+  .pill.warn { background: var(--warn-soft); color: var(--warn); }
+  .pill.danger { background: var(--danger-soft); color: var(--danger); }
+  .pill.muted { background: var(--surface-2); color: var(--muted); }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+
+  /* list rows */
+  .list { display: flex; flex-direction: column; }
+  .row-item { display: flex; align-items: center; gap: 12px; padding: 12px 4px; border-bottom: 1px solid var(--border); }
+  .row-item:last-child { border-bottom: none; }
+  .row-main { flex: 1; min-width: 0; }
+  .row-title { font-weight: 500; }
+  .row-sub { font-size: .82rem; color: var(--muted); margin-top: 1px; }
+  .row-actions { display: flex; gap: 2px; opacity: .55; transition: opacity .12s; }
+  .row-item:hover .row-actions { opacity: 1; }
+
+  .check { appearance: none; width: 20px; height: 20px; border: 2px solid var(--border-strong);
+    border-radius: 6px; flex: none; display: grid; place-content: center; background: var(--surface); transition: .12s; }
+  .check:checked { background: var(--accent); border-color: var(--accent); }
+  .check:checked::after { content: ""; width: 5px; height: 9px; border: solid #fff; border-width: 0 2px 2px 0;
+    transform: rotate(45deg) translateY(-1px); }
+  @media (prefers-color-scheme: dark) { .check:checked::after { border-color: #10150F; } }
+  :root[data-theme="dark"] .check:checked::after { border-color: #10150F; }
+  :root[data-theme="light"] .check:checked::after { border-color: #fff; }
+  .done .row-title { text-decoration: line-through; color: var(--muted); }
+
+  /* progress */
+  .progress { height: 8px; background: var(--surface-2); border-radius: 20px; overflow: hidden; border: 1px solid var(--border); }
+  .progress > span { display: block; height: 100%; background: var(--accent); border-radius: 20px; transition: width .3s; }
+
+  .empty { text-align: center; padding: 40px 20px; color: var(--muted); }
+  .empty svg { width: 34px; height: 34px; opacity: .4; margin-bottom: 10px; }
+  .empty p { margin: 0 0 14px; }
+
+  .avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--accent-soft); color: var(--accent-ink);
+    display: grid; place-content: center; font-size: .78rem; font-weight: 700; flex: none; font-family: var(--font-mono); }
+
+  .day-head { display: flex; align-items: baseline; gap: 10px; margin: 22px 0 10px; }
+  .day-head h4 { font-family: var(--font-display); font-size: 1.15rem; }
+
+  /* weather cards */
+  .wx-grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+  .wx { padding: 16px; }
+  .wx .temps { display: flex; align-items: baseline; gap: 8px; margin: 8px 0; }
+  .wx .hi { font-family: var(--font-display); font-size: 2rem; letter-spacing: -.02em; }
+  .wx .lo { color: var(--muted); font-size: 1.1rem; }
+  .wx .cond { font-size: .9rem; }
+
+  /* schedule timeline */
+  .timeline { position: relative; padding-left: 22px; }
+  .timeline::before { content: ""; position: absolute; left: 6px; top: 6px; bottom: 6px; width: 2px; background: var(--border); }
+  .tl-item { position: relative; padding: 8px 0 8px 6px; display: flex; gap: 14px; }
+  .tl-item::before { content: ""; position: absolute; left: -19px; top: 15px; width: 9px; height: 9px;
+    border-radius: 50%; background: var(--accent); border: 2px solid var(--surface); }
+  .tl-time { font-family: var(--font-mono); font-size: .82rem; color: var(--accent-ink); font-weight: 600;
+    width: 62px; flex: none; padding-top: 1px; }
+  @media (prefers-color-scheme: dark) { .tl-time { color: var(--accent); } }
+  :root[data-theme="dark"] .tl-time { color: var(--accent); }
+
+  .settle { display: flex; align-items: center; gap: 10px; padding: 10px 4px; border-bottom: 1px solid var(--border); font-size: .95rem; }
+  .settle:last-child { border-bottom: none; }
+  .settle .arrow { color: var(--muted); }
+  .settle .amt { margin-left: auto; font-family: var(--font-mono); font-weight: 600; }
+
+  /* ---------- Modal ---------- */
+  .overlay { position: fixed; inset: 0; background: rgba(20,24,18,.5); backdrop-filter: blur(3px);
+    display: grid; place-items: center; padding: 20px; z-index: 100; opacity: 0; pointer-events: none; transition: opacity .15s; }
+  .overlay.open { opacity: 1; pointer-events: auto; }
+  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    box-shadow: var(--shadow-lg); width: 100%; max-width: 500px; max-height: 88vh; overflow-y: auto;
+    transform: translateY(8px) scale(.98); transition: transform .15s; }
+  .overlay.open .modal { transform: none; }
+  .modal-head { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px;
+    border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--surface); z-index: 1; }
+  .modal-head h3 { font-family: var(--font-display); font-size: 1.25rem; }
+  .modal-body { padding: 20px; display: flex; flex-direction: column; gap: 15px; }
+  .modal-foot { padding: 14px 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px;
+    position: sticky; bottom: 0; background: var(--surface); }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .field label { font-size: .82rem; font-weight: 600; color: var(--ink); }
+  .field .hint { font-size: .76rem; color: var(--muted); font-weight: 400; }
+  .field input, .field select, .field textarea { width: 100%; padding: 9px 11px; border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm); background: var(--surface-2); color: var(--ink); }
+  .field textarea { resize: vertical; min-height: 72px; }
+  .field input:focus, .field select:focus, .field textarea:focus { outline: 2px solid var(--accent); outline-offset: 0; border-color: var(--accent); }
+  .chips { display: flex; flex-wrap: wrap; gap: 7px; }
+  .chip-toggle { padding: 6px 12px; border-radius: 20px; border: 1px solid var(--border-strong);
+    background: var(--surface-2); color: var(--ink); font-size: .82rem; }
+  .chip-toggle.on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+
+  /* toast */
+  .toast-wrap { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); z-index: 200;
+    display: flex; flex-direction: column; gap: 8px; align-items: center; }
+  .toast { background: var(--ink); color: var(--bg); padding: 10px 18px; border-radius: 20px; font-size: .87rem;
+    box-shadow: var(--shadow-lg); font-weight: 500; animation: toastIn .2s ease; }
+  @keyframes toastIn { from { opacity: 0; transform: translateY(10px); } }
+
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 860px) {
+    .app { grid-template-columns: 1fr; }
+    .sidebar { position: static; height: auto; flex-direction: column; }
+    .nav { display: flex; flex-wrap: nowrap; overflow-x: auto; padding: 8px 10px; gap: 4px; }
+    .nav-item { width: auto; white-space: nowrap; margin-bottom: 0; flex: none; }
+    .nav-item .badge { margin-left: 6px; }
+    .content { padding: 22px 18px 70px; }
+    .cols-4, .cols-3, .cols-2 { grid-template-columns: repeat(2, 1fr); }
+    .page-head h2 { font-size: 1.55rem; }
+  }
+  @media (max-width: 520px) {
+    .cols-4, .cols-3, .cols-2 { grid-template-columns: 1fr; }
+    .field.row2 { grid-template-columns: 1fr; }
+  }
+</style>
+
+<div id="app"></div>
+<div class="overlay" id="overlay"></div>
+<div class="toast-wrap" id="toasts"></div>
+
+<script>
+"use strict";
+(function () {
+  /* =========================================================
+     Basecamp — group trip command center
+     Vanilla JS, localStorage persistence, export/import.
+  ========================================================= */
+
+  const LS_KEY = "basecamp.v1";
+  const uid = (() => { let n = 0; return () => (Date.now().toString(36) + (n++).toString(36) + Math.floor(Math.random()*1e6).toString(36)); })();
+
+  /* ---------- Icons ---------- */
+  const I = {
+    logo: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 3 20h18L12 3Z"/><path d="M12 10 7.5 20"/><path d="M12 10l4.5 10"/></svg>',
+    overview: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polygon points="15.5 8.5 10.5 10.5 8.5 15.5 13.5 13.5 15.5 8.5"/></svg>',
+    weather: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',
+    meals: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3v7a2 2 0 0 0 2 2v9M4 3v6M7 3v6"/><path d="M18 3c-1.5 0-3 2-3 5s1 4 3 4v9"/></svg>',
+    shopping: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6h15l-1.5 9h-12z"/><path d="M6 6 5 3H2"/><circle cx="9" cy="20" r="1.3"/><circle cx="18" cy="20" r="1.3"/></svg>',
+    roles: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+    schedule: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>',
+    packing: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8V6a3 3 0 0 1 3-3h6a3 3 0 0 1 3 3v2"/><rect x="4" y="8" width="16" height="13" rx="2"/><path d="M9 12h6"/></svg>',
+    guests: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 19a4 4 0 0 0-8 0"/><circle cx="10" cy="9" r="3"/><path d="m16 11 2 2 4-4"/></svg>',
+    budget: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="13" rx="2"/><path d="M2 10h20"/><path d="M12 15h4"/></svg>',
+    notes: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6l1 2h2a1 1 0 0 1 1 1v0"/><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M8 10h8M8 14h8M8 18h5"/></svg>',
+    plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>',
+    edit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>',
+    trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>',
+    x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>',
+    download: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>',
+    upload: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3M7 8l5-5 5 5M5 21h14"/></svg>',
+    tent: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20 12 4l9 16M12 4v16M12 20l-4-6M12 20l4-6"/></svg>',
+    theme: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>',
+    pin: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>',
+  };
+
+  const NAV = [
+    { id: "overview", label: "Overview", icon: I.overview },
+    { id: "weather", label: "Weather", icon: I.weather },
+    { id: "meals", label: "Meals & Menu", icon: I.meals },
+    { id: "shopping", label: "Shopping", icon: I.shopping },
+    { id: "roles", label: "Roles", icon: I.roles },
+    { id: "schedule", label: "Schedule", icon: I.schedule },
+    { id: "packing", label: "Packing", icon: I.packing },
+    { id: "guests", label: "Guests & Carpool", icon: I.guests },
+    { id: "budget", label: "Budget", icon: I.budget },
+    { id: "notes", label: "Notes", icon: I.notes },
+  ];
+
+  /* ---------- Date helpers ---------- */
+  const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const DAYS = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  function parseDate(s) { if (!s) return null; const [y,m,d] = s.split("-").map(Number); return new Date(y, m-1, d, 12, 0, 0); }
+  function fmtDate(s, opt) {
+    const d = parseDate(s); if (!d) return "";
+    if (opt === "long") return DAYS[d.getDay()] + ", " + MONTHS[d.getMonth()] + " " + d.getDate();
+    if (opt === "dow") return DAYS[d.getDay()];
+    if (opt === "md") return MONTHS[d.getMonth()] + " " + d.getDate();
+    return MONTHS[d.getMonth()] + " " + d.getDate() + ", " + d.getFullYear();
+  }
+  function fmtRange(a, b) {
+    const da = parseDate(a), db = parseDate(b); if (!da) return "";
+    if (!db || a === b) return fmtDate(a);
+    const sameYear = da.getFullYear() === db.getFullYear();
+    const sameMonth = sameYear && da.getMonth() === db.getMonth();
+    if (sameMonth) return MONTHS[da.getMonth()] + " " + da.getDate() + "–" + db.getDate() + ", " + db.getFullYear();
+    if (sameYear) return MONTHS[da.getMonth()] + " " + da.getDate() + " – " + MONTHS[db.getMonth()] + " " + db.getDate() + ", " + db.getFullYear();
+    return fmtDate(a) + " – " + fmtDate(b);
+  }
+  function tripDays(trip) {
+    const out = []; const s = parseDate(trip.startDate), e = parseDate(trip.endDate);
+    if (!s) return out; const end = e || s;
+    let cur = new Date(s); let guard = 0;
+    while (cur <= end && guard < 60) { const iso = cur.getFullYear()+"-"+String(cur.getMonth()+1).padStart(2,"0")+"-"+String(cur.getDate()).padStart(2,"0"); out.push(iso); cur.setDate(cur.getDate()+1); guard++; }
+    return out;
+  }
+  function daysUntil(s) {
+    const d = parseDate(s); if (!d) return null;
+    const now = new Date(); now.setHours(12,0,0,0);
+    return Math.round((d - now) / 86400000);
+  }
+  function todayISO() { const n = new Date(); return n.getFullYear()+"-"+String(n.getMonth()+1).padStart(2,"0")+"-"+String(n.getDate()).padStart(2,"0"); }
+  function initials(name) { return (name||"?").trim().split(/\s+/).map(w=>w[0]).slice(0,2).join("").toUpperCase(); }
+  function esc(s) { return String(s==null?"":s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+  function money(n) { const v = Number(n)||0; return "$" + v.toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2}); }
+
+  /* ---------- State ---------- */
+  let state = null;
+  let ui = { section: "overview" };
+
+  function save() { try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) { console.warn("save failed", e); } }
+  function load() {
+    try { const raw = localStorage.getItem(LS_KEY); if (raw) return JSON.parse(raw); } catch (e) {}
+    return null;
+  }
+  function activeTrip() { return state.trips.find(t => t.id === state.activeId) || state.trips[0]; }
+  function personName(trip, id) { const p = (trip.people||[]).find(x => x.id === id); return p ? p.name : ""; }
+
+  /* ---------- Seed data ---------- */
+  function seedBonEcho() {
+    const names = ["Eric","Vanessa","Josh","Fei","Joyce","Marcus"];
+    const people = names.map(n => ({ id: uid(), name: n }));
+    const P = {}; people.forEach(p => P[p.name] = p.id);
+    const D = { fri: "2026-08-21", sat: "2026-08-22", sun: "2026-08-23" };
+    const mk = arr => arr.map(o => Object.assign({ id: uid() }, o));
+
+    return {
+      id: uid(),
+      name: "Bon Echo Camping Trip",
+      location: "Bon Echo Provincial Park, ON",
+      site: "Hardwood Hills Campground — Site 408",
+      startDate: D.fri, endDate: D.sun,
+      people,
+      weather: [],
+      meals: mk([
+        { day: D.fri, type: "Dinner", name: "Steak BBQ", personId: P.Eric, notes: "Steaks already bought ✓" },
+        { day: D.sat, type: "Breakfast", name: "Eggs & bacon", personId: "", notes: "" },
+        { day: D.sat, type: "Lunch", name: "Sandwiches / wraps", personId: "", notes: "Easy, no cook" },
+        { day: D.sat, type: "Dinner", name: "Foil packet dinners", personId: "", notes: "Veg + protein on the fire" },
+        { day: D.sun, type: "Breakfast", name: "Oatmeal & fruit", personId: "", notes: "Quick before pack-up" },
+      ]),
+      shopping: mk([
+        { item: "Steaks", category: "Food & Drink", qty: "6", forMeal: "Steak BBQ", gotIt: true },
+        { item: "Charcoal / propane", category: "Camp Supplies", qty: "", forMeal: "", gotIt: false },
+        { item: "Ice for cooler", category: "Camp Supplies", qty: "2 bags", forMeal: "", gotIt: false },
+        { item: "Firewood (buy near park)", category: "Camp Supplies", qty: "", forMeal: "", gotIt: false },
+        { item: "Eggs & bacon", category: "Food & Drink", qty: "", forMeal: "Eggs & bacon", gotIt: false },
+        { item: "Bread / buns / wraps", category: "Food & Drink", qty: "", forMeal: "", gotIt: false },
+        { item: "S'mores kit (marshmallows, chocolate, grahams)", category: "Food & Drink", qty: "", forMeal: "", gotIt: false },
+        { item: "Drinking water", category: "Food & Drink", qty: "", forMeal: "", gotIt: false },
+        { item: "Bug spray & sunscreen", category: "Personal", qty: "", forMeal: "", gotIt: false },
+      ]),
+      roles: mk([
+        { title: "Grill Master", personId: P.Eric, notes: "Runs the steak BBQ" },
+        { title: "Fire Keeper", personId: "", notes: "Builds & tends the campfire" },
+        { title: "Head Chef / Meal Planning", personId: "", notes: "Coordinates the menu" },
+        { title: "Navigator & Driving", personId: "", notes: "Route + park directions" },
+        { title: "First Aid Lead", personId: "", notes: "Carries & knows the kit" },
+        { title: "Firewood & Supplies", personId: "", notes: "Buys firewood locally" },
+        { title: "Camp Setup Lead", personId: "", notes: "Tents, tarp, layout" },
+        { title: "Cleanup Coordinator", personId: "", notes: "Leave no trace" },
+      ]),
+      schedule: mk([
+        { day: D.fri, time: "15:00", activity: "Arrive & check in — Site 408", notes: "" },
+        { day: D.fri, time: "16:00", activity: "Set up camp (tents, tarp)", notes: "" },
+        { day: D.fri, time: "18:30", activity: "Steak BBQ dinner", notes: "" },
+        { day: D.fri, time: "20:30", activity: "Campfire & s'mores", notes: "" },
+        { day: D.sat, time: "08:30", activity: "Breakfast", notes: "" },
+        { day: D.sat, time: "10:00", activity: "Hike to Mazinaw Rock", notes: "Pictographs viewable from the water" },
+        { day: D.sat, time: "13:00", activity: "Lunch at camp", notes: "" },
+        { day: D.sat, time: "14:30", activity: "Swim / relax at the lake", notes: "" },
+        { day: D.sat, time: "18:30", activity: "Dinner", notes: "" },
+        { day: D.sat, time: "20:30", activity: "Campfire", notes: "Stargazing — low light pollution" },
+        { day: D.sun, time: "08:30", activity: "Breakfast", notes: "" },
+        { day: D.sun, time: "10:00", activity: "Pack up camp", notes: "" },
+        { day: D.sun, time: "13:00", activity: "Check out & depart", notes: "Checkout is 2:00 PM" },
+      ]),
+      packing: mk([
+        { item: "Tent", category: "Shelter & Sleep", packed: false, personId: "" },
+        { item: "Tent stakes & mallet", category: "Shelter & Sleep", packed: false, personId: "" },
+        { item: "Tarp / footprint", category: "Shelter & Sleep", packed: false, personId: "" },
+        { item: "Sleeping bag", category: "Shelter & Sleep", packed: false, personId: "" },
+        { item: "Sleeping pad / air mattress", category: "Shelter & Sleep", packed: false, personId: "" },
+        { item: "Pillow", category: "Shelter & Sleep", packed: false, personId: "" },
+        { item: "Headlamp / flashlight", category: "Shelter & Sleep", packed: false, personId: "" },
+        { item: "Camp stove + fuel", category: "Kitchen & Cooking", packed: false, personId: "" },
+        { item: "BBQ grill grate", category: "Kitchen & Cooking", packed: false, personId: P.Eric },
+        { item: "Lighter & matches", category: "Kitchen & Cooking", packed: false, personId: "" },
+        { item: "Cooler + ice", category: "Kitchen & Cooking", packed: false, personId: "" },
+        { item: "Cookware (pot / pan / tongs)", category: "Kitchen & Cooking", packed: false, personId: "" },
+        { item: "Plates, bowls, cups, cutlery", category: "Kitchen & Cooking", packed: false, personId: "" },
+        { item: "Dish soap, sponge, towel", category: "Kitchen & Cooking", packed: false, personId: "" },
+        { item: "Trash bags & paper towels", category: "Kitchen & Cooking", packed: false, personId: "" },
+        { item: "Water jug", category: "Kitchen & Cooking", packed: false, personId: "" },
+        { item: "Rain jacket", category: "Clothing", packed: false, personId: "" },
+        { item: "Warm layer for night", category: "Clothing", packed: false, personId: "" },
+        { item: "Swimsuit & towel", category: "Clothing", packed: false, personId: "" },
+        { item: "Sturdy shoes / hiking boots", category: "Clothing", packed: false, personId: "" },
+        { item: "Extra socks & layers", category: "Clothing", packed: false, personId: "" },
+        { item: "Sunscreen & bug spray", category: "Personal & Health", packed: false, personId: "" },
+        { item: "First aid kit", category: "Personal & Health", packed: false, personId: "" },
+        { item: "Medications", category: "Personal & Health", packed: false, personId: "" },
+        { item: "Toiletries & toilet paper", category: "Personal & Health", packed: false, personId: "" },
+        { item: "Camp chairs", category: "Tools & Extras", packed: false, personId: "" },
+        { item: "Multi-tool / knife", category: "Tools & Extras", packed: false, personId: "" },
+        { item: "Rope / paracord & duct tape", category: "Tools & Extras", packed: false, personId: "" },
+        { item: "Phone charger / power bank", category: "Tools & Extras", packed: false, personId: "" },
+        { item: "Cash (firewood / park)", category: "Tools & Extras", packed: false, personId: "" },
+        { item: "Cards / games", category: "Fun", packed: false, personId: "" },
+        { item: "Bluetooth speaker", category: "Fun", packed: false, personId: "" },
+        { item: "Binoculars / camera", category: "Fun", packed: false, personId: "" },
+      ]),
+      guests: people.map(p => ({ id: uid(), personId: p.id, rsvp: "Yes", arrival: p.name === "Eric" ? "Fri afternoon" : "", contact: "", carpool: "", driver: p.name === "Eric" })),
+      budget: mk([]),
+      notes: "Bon Echo notes:\n• Mazinaw Rock features Indigenous pictographs — best seen from the water (canoe/boat rental on site).\n• Firewood must be bought locally to prevent spreading invasive species — don't transport your own.\n• Cell service is limited — download an offline map of the park before you go.\n• Checkout is 2:00 PM on departure day.",
+      checklist: mk([
+        { text: "Confirm reservation & Site 408", done: false },
+        { text: "Check the forecast and fill in the Weather tab", done: false },
+        { text: "Charge phones & power banks", done: false },
+        { text: "Fill water jugs", done: false },
+        { text: "Fuel up the car", done: false },
+        { text: "Buy firewood locally (don't transport)", done: false },
+        { text: "Download offline park map", done: false },
+        { text: "Confirm carpool plans", done: false },
+        { text: "Pack cooler with ice last", done: false },
+      ]),
+    };
+  }
+
+  function blankTrip(name) {
+    return { id: uid(), name: name || "New Trip", location: "", site: "", startDate: "", endDate: "",
+      people: [], weather: [], meals: [], shopping: [], roles: [], schedule: [], packing: [],
+      guests: [], budget: [], notes: "", checklist: [] };
+  }
+
+  function init() {
+    state = load();
+    if (!state || !state.trips || !state.trips.length) {
+      const t = seedBonEcho();
+      state = { trips: [t], activeId: t.id, theme: "auto" };
+      save();
+    }
+    // migrate: ensure fields exist
+    state.trips.forEach(t => {
+      ["weather","meals","shopping","roles","schedule","packing","guests","budget","checklist","people"].forEach(k => { if (!Array.isArray(t[k])) t[k] = []; });
+      if (typeof t.notes !== "string") t.notes = "";
+    });
+    applyTheme();
+    render();
+  }
+
+  /* ---------- Theme ---------- */
+  function applyTheme() {
+    const t = state.theme || "auto";
+    if (t === "auto") document.documentElement.removeAttribute("data-theme");
+    else document.documentElement.setAttribute("data-theme", t);
+  }
+  function cycleTheme() {
+    const order = ["auto","light","dark"]; const cur = state.theme || "auto";
+    state.theme = order[(order.indexOf(cur)+1) % 3]; save(); applyTheme();
+    toast("Theme: " + state.theme);
+  }
+
+  /* ---------- Toast ---------- */
+  function toast(msg) {
+    const wrap = document.getElementById("toasts");
+    const el = document.createElement("div"); el.className = "toast"; el.textContent = msg;
+    wrap.appendChild(el);
+    setTimeout(() => { el.style.opacity = "0"; el.style.transition = "opacity .3s"; setTimeout(() => el.remove(), 300); }, 2200);
+  }
+
+  /* =========================================================
+     MODAL / FORM BUILDER
+  ========================================================= */
+  let modalState = null;
+  function openForm(opts) {
+    // opts: { title, fields:[{key,label,type,options,required,placeholder,hint,value,row}], values, onSubmit }
+    modalState = opts;
+    const overlay = document.getElementById("overlay");
+    const trip = activeTrip();
+    const fieldsHtml = opts.fields.map(f => renderField(f, (opts.values||{})[f.key], trip)).join("");
+    overlay.innerHTML =
+      '<div class="modal" role="dialog" aria-modal="true">' +
+        '<div class="modal-head"><h3>'+esc(opts.title)+'</h3>' +
+          '<button class="icon-btn" data-close>'+I.x+'</button></div>' +
+        '<form id="modalForm"><div class="modal-body">'+fieldsHtml+'</div>' +
+        '<div class="modal-foot">' +
+          '<button type="button" class="btn ghost" data-close>Cancel</button>' +
+          '<button type="submit" class="btn primary">'+esc(opts.submitLabel||"Save")+'</button>' +
+        '</div></form>' +
+      '</div>';
+    overlay.classList.add("open");
+    const form = document.getElementById("modalForm");
+    // multiselect chips + toggle chips wiring
+    overlay.querySelectorAll("[data-chip]").forEach(ch => {
+      ch.addEventListener("click", () => ch.classList.toggle("on"));
+    });
+    form.addEventListener("submit", e => {
+      e.preventDefault();
+      const out = {};
+      let bad = null;
+      opts.fields.forEach(f => {
+        if (f.type === "multiperson") {
+          out[f.key] = Array.from(overlay.querySelectorAll('[data-chip][data-field="'+f.key+'"].on')).map(c => c.dataset.val);
+        } else if (f.type === "checkbox") {
+          out[f.key] = overlay.querySelector('[name="'+f.key+'"]').checked;
+        } else {
+          const el = overlay.querySelector('[name="'+f.key+'"]');
+          let v = el ? el.value.trim() : "";
+          if (f.required && !v) { if (!bad) bad = el; }
+          out[f.key] = v;
+        }
+      });
+      if (bad) { bad.focus(); bad.style.borderColor = "var(--danger)"; toast("Please fill in the required fields"); return; }
+      closeModal();
+      opts.onSubmit(out);
+    });
+    const first = overlay.querySelector("input, select, textarea"); if (first) setTimeout(() => first.focus(), 50);
+  }
+  function renderField(f, val, trip) {
+    val = val == null ? (f.default != null ? f.default : "") : val;
+    let inner = "";
+    const name = 'name="'+f.key+'"';
+    if (f.type === "textarea") inner = '<textarea '+name+' placeholder="'+esc(f.placeholder||"")+'">'+esc(val)+'</textarea>';
+    else if (f.type === "select") {
+      const opts = (typeof f.options === "function" ? f.options(trip) : f.options) || [];
+      inner = '<select '+name+'>' + opts.map(o => {
+        const ov = typeof o === "object" ? o.value : o; const ol = typeof o === "object" ? o.label : o;
+        return '<option value="'+esc(ov)+'"'+(String(ov)===String(val)?" selected":"")+'>'+esc(ol)+'</option>';
+      }).join("") + '</select>';
+    }
+    else if (f.type === "person") {
+      const people = trip.people || [];
+      inner = '<select '+name+'><option value="">— Unassigned —</option>' + people.map(p =>
+        '<option value="'+p.id+'"'+(p.id===val?" selected":"")+'>'+esc(p.name)+'</option>').join("") + '</select>';
+    }
+    else if (f.type === "multiperson") {
+      const people = trip.people || []; const arr = Array.isArray(val) ? val : (people.map(p=>p.id));
+      inner = '<div class="chips">' + people.map(p =>
+        '<button type="button" class="chip-toggle'+(arr.indexOf(p.id)>=0?" on":"")+'" data-chip data-field="'+f.key+'" data-val="'+p.id+'">'+esc(p.name)+'</button>').join("") + '</div>';
+    }
+    else if (f.type === "checkbox") {
+      inner = '<label style="display:flex;align-items:center;gap:9px;font-weight:400;cursor:pointer">' +
+        '<input type="checkbox" '+name+' class="check"'+(val?" checked":"")+'> '+esc(f.checkLabel||"")+'</label>';
+      return '<div class="field">'+inner+(f.hint?'<span class="hint">'+esc(f.hint)+'</span>':"")+'</div>';
+    }
+    else inner = '<input type="'+(f.type||"text")+'" '+name+' value="'+esc(val)+'" placeholder="'+esc(f.placeholder||"")+'"'+(f.type==="number"?' step="0.01"':"")+'>';
+    return '<div class="field'+(f.row?" ":"")+'"><label>'+esc(f.label)+(f.required?' <span style="color:var(--danger)">*</span>':"")+'</label>'+inner+(f.hint?'<span class="hint">'+esc(f.hint)+'</span>':"")+'</div>';
+  }
+  function closeModal() {
+    const overlay = document.getElementById("overlay");
+    overlay.classList.remove("open");
+    setTimeout(() => { if (!overlay.classList.contains("open")) overlay.innerHTML = ""; }, 200);
+    modalState = null;
+  }
+  function confirmDialog(title, msg, onYes, yesLabel) {
+    const overlay = document.getElementById("overlay");
+    overlay.innerHTML =
+      '<div class="modal" role="dialog" aria-modal="true" style="max-width:400px">' +
+        '<div class="modal-head"><h3>'+esc(title)+'</h3><button class="icon-btn" data-close>'+I.x+'</button></div>' +
+        '<div class="modal-body"><p style="margin:0;color:var(--muted)">'+esc(msg)+'</p></div>' +
+        '<div class="modal-foot"><button class="btn ghost" data-close>Cancel</button>' +
+        '<button class="btn danger" id="confirmYes">'+esc(yesLabel||"Delete")+'</button></div>' +
+      '</div>';
+    overlay.classList.add("open");
+    document.getElementById("confirmYes").addEventListener("click", () => { closeModal(); onYes(); });
+  }
+
+  /* =========================================================
+     RENDER — shell
+  ========================================================= */
+  function render() {
+    const trip = activeTrip();
+    const app = document.getElementById("app");
+    app.innerHTML =
+      '<div class="app">' + renderSidebar(trip) +
+      '<div class="main"><div class="content" id="content"></div></div></div>';
+    renderSection();
+  }
+
+  function counts(trip) {
+    return {
+      weather: (trip.weather||[]).length,
+      meals: trip.meals.length,
+      shopping: trip.shopping.filter(x=>!x.gotIt).length,
+      roles: trip.roles.length,
+      schedule: trip.schedule.length,
+      packing: trip.packing.filter(x=>!x.packed).length,
+      guests: trip.guests.filter(g=>g.rsvp==="Yes").length,
+      budget: trip.budget.length,
+      notes: trip.checklist.filter(c=>!c.done).length,
+    };
+  }
+
+  function renderSidebar(trip) {
+    const c = counts(trip);
+    const themeLabel = { auto: "Auto", light: "Light", dark: "Dark" }[state.theme||"auto"];
+    return '<aside class="sidebar">' +
+      '<div class="brand"><div class="brand-mark">'+I.logo+'<div><div class="brand-name">Basecamp</div>' +
+        '<div class="brand-sub label">Trip Command Center</div></div></div></div>' +
+      '<div class="trip-switch">' +
+        '<select data-action="switch-trip" aria-label="Active trip">' +
+          state.trips.map(t => '<option value="'+t.id+'"'+(t.id===trip.id?" selected":"")+'>'+esc(t.name)+'</option>').join("") +
+        '</select>' +
+        '<div class="row">' +
+          '<button class="btn sm" data-action="new-trip" style="flex:1">'+I.plus+' New trip</button>' +
+          '<button class="btn sm" data-action="edit-trip" title="Edit trip details">'+I.edit+'</button>' +
+        '</div>' +
+      '</div>' +
+      '<nav class="nav">' + NAV.map(n => {
+        const badge = c[n.id] ? '<span class="badge num">'+c[n.id]+'</span>' : "";
+        return '<button class="nav-item'+(ui.section===n.id?" active":"")+'" data-action="nav" data-section="'+n.id+'">'+n.icon+'<span>'+n.label+'</span>'+badge+'</button>';
+      }).join("") + '</nav>' +
+      '<div class="sidebar-foot">' +
+        '<button class="btn sm" data-action="export" title="Download a backup">'+I.download+' Export</button>' +
+        '<button class="btn sm" data-action="import" title="Load a backup">'+I.upload+' Import</button>' +
+        '<button class="btn sm" data-action="theme" title="Toggle theme">'+I.theme+' '+themeLabel+'</button>' +
+      '</div>' +
+    '</aside>';
+  }
+
+  function pageHead(title, sub, actionsHtml) {
+    return '<div class="page-head"><div><h2>'+esc(title)+'</h2>'+(sub?'<p>'+sub+'</p>':"")+'</div>' +
+      (actionsHtml?'<div style="display:flex;gap:8px;flex-wrap:wrap">'+actionsHtml+'</div>':"") + '</div>';
+  }
+  function addBtn(action, label) { return '<button class="btn primary" data-action="'+action+'">'+I.plus+' '+esc(label)+'</button>'; }
+  function emptyState(icon, msg, action, label) {
+    return '<div class="card card-pad empty">'+icon+'<p>'+esc(msg)+'</p>' +
+      (action?'<button class="btn primary" data-action="'+action+'" style="margin:0 auto">'+I.plus+' '+esc(label)+'</button>':"") + '</div>';
+  }
+  function rowActions(editAction, delAction, id) {
+    return '<div class="row-actions">' +
+      '<button class="icon-btn" data-action="'+editAction+'" data-id="'+id+'" title="Edit">'+I.edit+'</button>' +
+      '<button class="icon-btn" data-action="'+delAction+'" data-id="'+id+'" title="Delete">'+I.trash+'</button></div>';
+  }
+  function personBadge(trip, id) {
+    if (!id) return '<span class="pill muted">Unassigned</span>';
+    const n = personName(trip, id); if (!n) return '<span class="pill muted">Unassigned</span>';
+    return '<span class="avatar" title="'+esc(n)+'">'+initials(n)+'</span>';
+  }
+
+  function renderSection() {
+    const trip = activeTrip();
+    const el = document.getElementById("content");
+    const map = { overview: secOverview, weather: secWeather, meals: secMeals, shopping: secShopping,
+      roles: secRoles, schedule: secSchedule, packing: secPacking, guests: secGuests, budget: secBudget, notes: secNotes };
+    el.innerHTML = (map[ui.section] || secOverview)(trip);
+    if (ui.section === "notes") wireNotes(trip);
+  }
+
+  /* =========================================================
+     SECTIONS
+  ========================================================= */
+  function secOverview(trip) {
+    const days = tripDays(trip);
+    const du = daysUntil(trip.startDate);
+    const dueEnd = daysUntil(trip.endDate);
+    let countTitle, countVal, countSub, pillClass = "ember";
+    if (du === null) { countVal = "—"; countTitle = "Countdown"; countSub = "Set trip dates to start the countdown"; pillClass="muted"; }
+    else if (du > 0) { countVal = du; countTitle = "Days to go"; countSub = "Departure " + fmtDate(trip.startDate,"long"); }
+    else if (du <= 0 && dueEnd >= 0) { countVal = "Now"; countTitle = "Trip in progress"; countSub = "Wraps " + fmtDate(trip.endDate,"long"); pillClass="green"; }
+    else { countVal = "✓"; countTitle = "Trip complete"; countSub = "Hope it was a good one"; pillClass="muted"; }
+
+    const packedTotal = trip.packing.length;
+    const packedDone = trip.packing.filter(x=>x.packed).length;
+    const packPct = packedTotal ? Math.round(packedDone/packedTotal*100) : 0;
+    const mealsPlanned = trip.meals.filter(m=>m.name).length;
+    const guestsYes = trip.guests.filter(g=>g.rsvp==="Yes").length;
+    const shopLeft = trip.shopping.filter(x=>!x.gotIt).length;
+    const budgetTotal = trip.budget.reduce((s,e)=>s+(Number(e.amount)||0),0);
+    const checkLeft = trip.checklist.filter(c=>!c.done).length;
+
+    // today's / first day schedule
+    const t = todayISO();
+    let focusDay = days.indexOf(t) >= 0 ? t : days[0];
+    const daySched = trip.schedule.filter(s=>s.day===focusDay).sort((a,b)=>(a.time||"").localeCompare(b.time||""));
+    // first weather day
+    const wx = (trip.weather||[]).find(w=>w.date===focusDay) || (trip.weather||[])[0];
+
+    let html = '<div class="page-head"><div><h2>'+esc(trip.name)+'</h2>' +
+      '<p>'+(trip.location?'<span class="label" style="text-transform:none;letter-spacing:0;font-size:.95rem">'+esc(trip.location)+(trip.site?' · '+esc(trip.site):"")+'</span>':"Add a location in trip details") + '</p></div>' +
+      '<div style="text-align:right"><div class="label">'+esc(fmtRange(trip.startDate, trip.endDate)||"No dates set")+'</div>' +
+      '<div style="margin-top:6px"><span class="pill '+pillClass+'"><span class="dot"></span>'+esc(String(du!==null&&du>0?du+" days out":countTitle))+'</span></div></div></div>';
+
+    // hero stats
+    html += '<div class="grid cols-4 section-block">' +
+      statTile(countTitle, '<span class="num">'+countVal+'</span>', countSub, "ember") +
+      statTile("Packing", '<span class="num">'+packPct+'%</span>', packedDone+" of "+packedTotal+" packed", "accent", packPct) +
+      statTile("Meals planned", '<span class="num">'+mealsPlanned+'</span>', "on the menu") +
+      statTile("Going", '<span class="num">'+guestsYes+'</span>', "confirmed of "+trip.people.length) +
+    '</div>';
+
+    html += '<div class="grid cols-2">';
+
+    // schedule card
+    html += '<div class="card card-pad"><div class="section-title"><div><h3>'+(focusDay===t?"Today":fmtDate(focusDay,"dow")+"’s plan")+'</h3>' +
+      '<div class="label">'+esc(fmtDate(focusDay,"long")||"Schedule")+'</div></div>' +
+      '<button class="btn sm" data-action="nav" data-section="schedule">Full schedule</button></div>';
+    if (daySched.length) {
+      html += '<div class="timeline">' + daySched.slice(0,6).map(s =>
+        '<div class="tl-item"><span class="tl-time num">'+esc(s.time||"—")+'</span><div><div class="row-title">'+esc(s.activity)+'</div>'+(s.notes?'<div class="row-sub">'+esc(s.notes)+'</div>':"")+'</div></div>').join("") + '</div>';
+    } else html += '<p style="color:var(--muted);margin:8px 0 0">Nothing scheduled for this day yet.</p>';
+    html += '</div>';
+
+    // weather + quick facts card
+    html += '<div style="display:flex;flex-direction:column;gap:16px">';
+    html += '<div class="card card-pad"><div class="section-title"><h3>Weather</h3><button class="btn sm" data-action="nav" data-section="weather">All days</button></div>';
+    if (wx) {
+      html += '<div style="display:flex;align-items:baseline;gap:10px;margin-top:6px">' +
+        '<span class="wx-hi" style="font-family:var(--font-display);font-size:2.2rem">'+esc(wx.high||"—")+'°</span>' +
+        '<span style="color:var(--muted)">/ '+esc(wx.low||"—")+'°</span>' +
+        '<span style="margin-left:auto" class="pill info">'+esc(wx.condition||"—")+'</span></div>' +
+        '<div class="label" style="margin-top:6px">'+esc(fmtDate(wx.date,"long"))+(wx.precip?' · '+esc(wx.precip)+' precip':"")+'</div>';
+    } else {
+      html += '<p style="color:var(--muted);margin:8px 0 0">No forecast entered yet. Add it in the Weather tab closer to the trip.</p>';
+    }
+    html += '</div>';
+
+    // quick facts
+    html += '<div class="card card-pad"><h3 style="margin-bottom:12px">At a glance</h3><div class="list" style="gap:0">' +
+      glanceRow("Shopping left", shopLeft + " item"+(shopLeft===1?"":"s"), "shopping") +
+      glanceRow("Prep checklist", checkLeft + " to do", "notes") +
+      glanceRow("Shared budget", money(budgetTotal), "budget") +
+      glanceRow("Roles assigned", trip.roles.filter(r=>r.personId).length + " of " + trip.roles.length, "roles") +
+      '</div></div>';
+    html += '</div>'; // right col
+    html += '</div>'; // grid
+
+    return html;
+  }
+  function statTile(label, val, sub, tone, pct) {
+    return '<div class="card stat"><div class="label">'+esc(label)+'</div><div class="val" style="'+(tone==="ember"?"color:var(--ember)":"")+'">'+val+'</div>' +
+      (pct!=null?'<div class="progress" style="margin-top:10px"><span style="width:'+pct+'%"></span></div>':'<div class="sub">'+esc(sub)+'</div>') + '</div>';
+  }
+  function glanceRow(label, val, section) {
+    return '<button class="row-item" data-action="nav" data-section="'+section+'" style="width:100%;background:none;border-left:none;border-right:none;border-top:none;text-align:left;cursor:pointer">' +
+      '<span class="row-main"><span class="row-title" style="font-weight:400">'+esc(label)+'</span></span>' +
+      '<span class="pill muted">'+esc(val)+'</span></button>';
+  }
+
+  /* ---------- Weather ---------- */
+  function secWeather(trip) {
+    const days = tripDays(trip);
+    let html = pageHead("Weather", "Manual forecast — enter it closer to the trip (live forecasts reach ~14 days out).", "");
+    if (!days.length) return html + emptyState(I.weather, "Set trip dates first to lay out the forecast days.", "edit-trip", "Set dates");
+    html += '<div class="card card-pad" style="margin-bottom:18px;display:flex;gap:10px;align-items:center;background:var(--info-soft);border-color:transparent">' +
+      '<span class="label" style="color:var(--info)">Tip</span><span style="font-size:.9rem;color:var(--ink)">Around Aug 7, check a forecast for '+esc(trip.location||"your destination")+' and fill in each day. Click a card to edit.</span></div>';
+    html += '<div class="wx-grid">';
+    days.forEach(d => {
+      const w = (trip.weather||[]).find(x => x.date === d) || { date: d };
+      const filled = w.high || w.low || w.condition;
+      html += '<button class="card wx" data-action="edit-weather" data-id="'+d+'" style="text-align:left;cursor:pointer;color:inherit">' +
+        '<div class="label">'+esc(fmtDate(d,"dow"))+' · '+esc(fmtDate(d,"md"))+'</div>' +
+        (filled ?
+          '<div class="temps"><span class="hi">'+esc(w.high||"—")+'°</span><span class="lo">/ '+esc(w.low||"—")+'°</span></div>' +
+          '<div class="cond"><span class="pill info">'+esc(w.condition||"—")+'</span></div>' +
+          (w.precip?'<div class="row-sub" style="margin-top:8px">Precip: '+esc(w.precip)+'</div>':"") +
+          (w.notes?'<div class="row-sub">'+esc(w.notes)+'</div>':"")
+          : '<div class="temps"><span class="hi" style="color:var(--muted)">—</span></div><div class="cond" style="color:var(--muted);font-size:.85rem">Tap to add forecast</div>') +
+        '</button>';
+    });
+    html += '</div>';
+    return html;
+  }
+
+  /* ---------- Meals ---------- */
+  const MEAL_ORDER = { "Breakfast":0, "Lunch":1, "Dinner":2, "Snack":3, "Drinks":4 };
+  function secMeals(trip) {
+    let html = pageHead("Meals & Menu", "What you're eating, and who's cooking.", addBtn("add-meal","Add meal"));
+    const days = tripDays(trip);
+    if (!trip.meals.length) return html + emptyState(I.meals, "No meals planned yet. Build out the menu day by day.", "add-meal", "Add first meal");
+    const groups = days.length ? days.slice() : [];
+    trip.meals.forEach(m => { if (groups.indexOf(m.day) < 0) groups.push(m.day || ""); });
+    groups.forEach(day => {
+      const meals = trip.meals.filter(m => (m.day||"") === (day||"")).sort((a,b)=>(MEAL_ORDER[a.type]??9)-(MEAL_ORDER[b.type]??9));
+      if (!meals.length) return;
+      html += '<div class="day-head"><h4>'+esc(day?fmtDate(day,"long"):"Unscheduled")+'</h4></div>';
+      html += '<div class="card"><div class="list card-pad" style="padding-top:4px;padding-bottom:4px">';
+      meals.forEach(m => {
+        html += '<div class="row-item">' +
+          '<span class="pill green" style="min-width:74px;justify-content:center">'+esc(m.type||"Meal")+'</span>' +
+          '<div class="row-main"><div class="row-title">'+esc(m.name||"(unnamed)")+'</div>' +
+          (m.notes?'<div class="row-sub">'+esc(m.notes)+'</div>':"") + '</div>' +
+          (m.personId?'<span class="pill muted" style="gap:6px">'+personBadge(trip,m.personId)+'<span style="font-family:var(--font-body);font-weight:500">'+esc(personName(trip,m.personId))+'</span></span>':'<span class="pill muted">cook: TBD</span>') +
+          rowActions("edit-meal","del-meal",m.id) + '</div>';
+      });
+      html += '</div></div>';
+    });
+    return html;
+  }
+  function mealFields(trip) {
+    const days = tripDays(trip);
+    return [
+      { key:"day", label:"Day", type:"select", options: () => (days.length?days:[""]).map(d => ({value:d, label: d?fmtDate(d,"long"):"Unscheduled"})) },
+      { key:"type", label:"Meal", type:"select", options:["Breakfast","Lunch","Dinner","Snack","Drinks"] },
+      { key:"name", label:"Dish / menu", type:"text", required:true, placeholder:"e.g. Steak BBQ" },
+      { key:"personId", label:"Who's cooking", type:"person" },
+      { key:"notes", label:"Notes", type:"textarea", placeholder:"Ingredients, prep, dietary notes…" },
+    ];
+  }
+
+  /* ---------- Shopping ---------- */
+  function secShopping(trip) {
+    const left = trip.shopping.filter(x=>!x.gotIt).length;
+    let html = pageHead("Shopping List", left+" item"+(left===1?"":"s")+" still to buy.",
+      '<button class="btn" data-action="clear-got">Clear checked</button>' + addBtn("add-shop","Add item"));
+    if (!trip.shopping.length) return html + emptyState(I.shopping, "Nothing on the list yet. Add supplies and groceries.", "add-shop", "Add first item");
+    const cats = {};
+    trip.shopping.forEach(s => { const c = s.category||"Other"; (cats[c]=cats[c]||[]).push(s); });
+    Object.keys(cats).forEach(cat => {
+      const items = cats[cat];
+      html += '<div class="day-head"><h4>'+esc(cat)+'</h4><span class="label">'+items.filter(i=>i.gotIt).length+'/'+items.length+'</span></div>';
+      html += '<div class="card"><div class="list card-pad" style="padding-top:4px;padding-bottom:4px">';
+      items.forEach(s => {
+        html += '<div class="row-item'+(s.gotIt?" done":"")+'">' +
+          '<input type="checkbox" class="check" '+(s.gotIt?"checked":"")+' data-action="toggle-shop" data-id="'+s.id+'">' +
+          '<div class="row-main"><div class="row-title">'+esc(s.item)+(s.qty?' <span class="label" style="text-transform:none;letter-spacing:0">· '+esc(s.qty)+'</span>':"")+'</div>' +
+          (s.forMeal?'<div class="row-sub">for '+esc(s.forMeal)+'</div>':"") + '</div>' +
+          rowActions("edit-shop","del-shop",s.id) + '</div>';
+      });
+      html += '</div></div>';
+    });
+    return html;
+  }
+  function shopFields(trip) {
+    const cats = ["Food & Drink","Camp Supplies","Personal","Cooking Gear","Other"];
+    return [
+      { key:"item", label:"Item", type:"text", required:true, placeholder:"e.g. Charcoal" },
+      { key:"qty", label:"Quantity", type:"text", placeholder:"e.g. 2 bags", row:true },
+      { key:"category", label:"Category", type:"select", options: cats },
+      { key:"forMeal", label:"For meal (optional)", type:"text", placeholder:"Link to a menu item" },
+    ];
+  }
+
+  /* ---------- Roles ---------- */
+  function secRoles(trip) {
+    let html = pageHead("Roles & Responsibilities", "Who's got what covered.", addBtn("add-role","Add role"));
+    if (!trip.people.length) html += noPeopleNote();
+    if (!trip.roles.length) return html + emptyState(I.roles, "No roles yet. Assign responsibilities so nothing slips.", "add-role", "Add first role");
+    html += '<div class="grid cols-2">';
+    trip.roles.forEach(r => {
+      html += '<div class="card card-pad" style="display:flex;align-items:flex-start;gap:14px">' +
+        personBadge(trip, r.personId) +
+        '<div style="flex:1;min-width:0"><div class="row-title">'+esc(r.title)+'</div>' +
+        '<div class="row-sub">'+(r.personId?esc(personName(trip,r.personId)):"Unassigned")+(r.notes?' · '+esc(r.notes):"")+'</div></div>' +
+        rowActions("edit-role","del-role",r.id) + '</div>';
+    });
+    html += '</div>';
+    return html;
+  }
+  function roleFields() {
+    return [
+      { key:"title", label:"Responsibility", type:"text", required:true, placeholder:"e.g. Fire Keeper" },
+      { key:"personId", label:"Assigned to", type:"person" },
+      { key:"notes", label:"Notes", type:"text", placeholder:"Optional detail" },
+    ];
+  }
+
+  /* ---------- Schedule ---------- */
+  function secSchedule(trip) {
+    let html = pageHead("Daily Schedule", "The plan, hour by hour.", addBtn("add-sched","Add item"));
+    const days = tripDays(trip);
+    if (!trip.schedule.length) return html + emptyState(I.schedule, "No schedule yet. Lay out arrival, activities and departure.", "add-sched", "Add first item");
+    const groups = days.length ? days.slice() : [];
+    trip.schedule.forEach(s => { if (groups.indexOf(s.day) < 0) groups.push(s.day||""); });
+    groups.forEach(day => {
+      const items = trip.schedule.filter(s => (s.day||"")===(day||"")).sort((a,b)=>(a.time||"").localeCompare(b.time||""));
+      if (!items.length) return;
+      html += '<div class="day-head"><h4>'+esc(day?fmtDate(day,"long"):"Unscheduled")+'</h4></div>';
+      html += '<div class="card card-pad"><div class="timeline">';
+      items.forEach(s => {
+        html += '<div class="tl-item"><span class="tl-time num">'+esc(s.time||"—")+'</span>' +
+          '<div style="flex:1"><div class="row-title">'+esc(s.activity)+'</div>'+(s.notes?'<div class="row-sub">'+esc(s.notes)+'</div>':"")+'</div>' +
+          rowActions("edit-sched","del-sched",s.id) + '</div>';
+      });
+      html += '</div></div>';
+    });
+    return html;
+  }
+  function schedFields(trip) {
+    const days = tripDays(trip);
+    return [
+      { key:"day", label:"Day", type:"select", options: () => (days.length?days:[""]).map(d => ({value:d, label: d?fmtDate(d,"long"):"Unscheduled"})) },
+      { key:"time", label:"Time", type:"time", row:true },
+      { key:"activity", label:"Activity", type:"text", required:true, placeholder:"e.g. Hike to Mazinaw Rock" },
+      { key:"notes", label:"Notes", type:"text", placeholder:"Optional detail" },
+    ];
+  }
+
+  /* ---------- Packing ---------- */
+  function secPacking(trip) {
+    const total = trip.packing.length, done = trip.packing.filter(x=>x.packed).length;
+    const pct = total ? Math.round(done/total*100) : 0;
+    let html = pageHead("Packing List", done+" of "+total+" packed.", addBtn("add-pack","Add item"));
+    if (!trip.packing.length) return html + emptyState(I.packing, "Empty list. Add what needs to come along.", "add-pack", "Add first item");
+    html += '<div class="card card-pad section-block"><div style="display:flex;justify-content:space-between;margin-bottom:8px"><span class="label">Overall progress</span><span class="num" style="font-weight:600">'+pct+'%</span></div><div class="progress"><span style="width:'+pct+'%"></span></div></div>';
+    const cats = {};
+    trip.packing.forEach(p => { const c = p.category||"Other"; (cats[c]=cats[c]||[]).push(p); });
+    Object.keys(cats).forEach(cat => {
+      const items = cats[cat];
+      html += '<div class="day-head"><h4>'+esc(cat)+'</h4><span class="label">'+items.filter(i=>i.packed).length+'/'+items.length+'</span></div>';
+      html += '<div class="card"><div class="list card-pad" style="padding-top:4px;padding-bottom:4px">';
+      items.forEach(p => {
+        html += '<div class="row-item'+(p.packed?" done":"")+'">' +
+          '<input type="checkbox" class="check" '+(p.packed?"checked":"")+' data-action="toggle-pack" data-id="'+p.id+'">' +
+          '<div class="row-main"><div class="row-title">'+esc(p.item)+'</div>' +
+          (p.personId?'<div class="row-sub">'+esc(personName(trip,p.personId))+' is bringing it</div>':"") + '</div>' +
+          rowActions("edit-pack","del-pack",p.id) + '</div>';
+      });
+      html += '</div></div>';
+    });
+    return html;
+  }
+  function packFields() {
+    const cats = ["Shelter & Sleep","Kitchen & Cooking","Clothing","Personal & Health","Tools & Extras","Fun","Other"];
+    return [
+      { key:"item", label:"Item", type:"text", required:true, placeholder:"e.g. Sleeping bag" },
+      { key:"category", label:"Category", type:"select", options: cats },
+      { key:"personId", label:"Who's bringing it", type:"person" },
+    ];
+  }
+
+  /* ---------- Guests & Carpool ---------- */
+  function secGuests(trip) {
+    let html = pageHead("Guests & Carpool", "Who's coming, and who's driving with whom.",
+      '<button class="btn" data-action="add-person">'+I.plus+' Add person</button>');
+    if (!trip.people.length) return html + emptyState(I.guests, "No one added yet. Add the crew.", "add-person", "Add person");
+    // ensure a guest record per person
+    const rsvpTone = { "Yes":"green", "No":"danger", "Maybe":"warn", "":"muted" };
+    html += '<div class="card"><div class="list card-pad" style="padding-top:4px;padding-bottom:4px">';
+    trip.people.forEach(p => {
+      const g = trip.guests.find(x => x.personId === p.id) || { personId: p.id, rsvp:"", arrival:"", contact:"", carpool:"", driver:false };
+      html += '<div class="row-item">' + '<span class="avatar">'+initials(p.name)+'</span>' +
+        '<div class="row-main"><div class="row-title">'+esc(p.name)+(g.driver?' <span class="pill info" style="margin-left:6px">Driver</span>':"")+'</div>' +
+        '<div class="row-sub">' + (g.arrival?'Arrives '+esc(g.arrival):"") + (g.carpool?(g.arrival?' · ':'')+'Carpool: '+esc(g.carpool):"") + (g.contact?(g.arrival||g.carpool?' · ':'')+esc(g.contact):"") + (!(g.arrival||g.carpool||g.contact)?'No details yet':"") + '</div></div>' +
+        '<span class="pill '+(rsvpTone[g.rsvp]||"muted")+'">'+esc(g.rsvp||"No reply")+'</span>' +
+        '<div class="row-actions"><button class="icon-btn" data-action="edit-guest" data-id="'+p.id+'" title="Edit">'+I.edit+'</button>' +
+        '<button class="icon-btn" data-action="del-person" data-id="'+p.id+'" title="Remove person">'+I.trash+'</button></div>' + '</div>';
+    });
+    html += '</div></div>';
+    // carpool groupings
+    const groups = {};
+    trip.people.forEach(p => { const g = trip.guests.find(x=>x.personId===p.id); const key = (g&&g.carpool)?g.carpool:null; if (key) (groups[key]=groups[key]||[]).push({p,g}); });
+    if (Object.keys(groups).length) {
+      html += '<div class="day-head"><h4>Carpool groups</h4></div><div class="grid cols-2">';
+      Object.keys(groups).forEach(k => {
+        html += '<div class="card card-pad"><div class="label" style="margin-bottom:8px">'+esc(k)+'</div>' +
+          groups[k].map(({p,g}) => '<div style="display:flex;align-items:center;gap:9px;padding:4px 0"><span class="avatar">'+initials(p.name)+'</span><span>'+esc(p.name)+'</span>'+(g.driver?'<span class="pill info" style="margin-left:auto">Driving</span>':"")+'</div>').join("") +
+          '</div>';
+      });
+      html += '</div>';
+    }
+    return html;
+  }
+  function guestFields() {
+    return [
+      { key:"rsvp", label:"RSVP", type:"select", options:["Yes","Maybe","No",""].map(v=>({value:v,label:v||"No reply"})) },
+      { key:"arrival", label:"Arrival", type:"text", placeholder:"e.g. Fri afternoon", row:true },
+      { key:"carpool", label:"Carpool group", type:"text", placeholder:"e.g. Eric's car" },
+      { key:"contact", label:"Contact", type:"text", placeholder:"Phone / email (optional)" },
+      { key:"driver", label:"Driver", type:"checkbox", checkLabel:"This person is driving" },
+    ];
+  }
+
+  /* ---------- Budget ---------- */
+  function secBudget(trip) {
+    const total = trip.budget.reduce((s,e)=>s+(Number(e.amount)||0),0);
+    let html = pageHead("Budget & Split", "Shared expenses, split automatically.", addBtn("add-expense","Add expense"));
+    if (!trip.people.length) html += noPeopleNote();
+    // summary tiles
+    const perHead = trip.people.length ? total/trip.people.length : 0;
+    html += '<div class="grid cols-3 section-block">' +
+      statTile("Total spent", '<span class="num">'+money(total)+'</span>', trip.budget.length+" expense"+(trip.budget.length===1?"":"s")) +
+      statTile("Per person", '<span class="num">'+money(perHead)+'</span>', "even split of all shared costs") +
+      statTile("Expenses", '<span class="num">'+trip.budget.length+'</span>', "logged") +
+    '</div>';
+
+    // settle up
+    const settle = computeSettle(trip);
+    html += '<div class="section-block"><div class="section-title"><h3>Settle up</h3><span class="label">Fewest transfers</span></div><div class="card card-pad">';
+    if (!trip.budget.length) html += '<p style="color:var(--muted);margin:0">Add expenses to see who owes whom.</p>';
+    else if (!settle.length) html += '<p style="color:var(--accent-ink);margin:0">All square — everyone\'s even. 🎒</p>'.replace("🎒","");
+    else html += settle.map(s => '<div class="settle"><span class="avatar">'+initials(s.fromName)+'</span><span>'+esc(s.fromName)+'</span>' +
+      '<span class="arrow">→ pays →</span><span class="avatar">'+initials(s.toName)+'</span><span>'+esc(s.toName)+'</span>' +
+      '<span class="amt">'+money(s.amount)+'</span></div>').join("");
+    html += '</div></div>';
+
+    // expense list
+    html += '<div class="section-title"><h3>Expenses</h3></div>';
+    if (!trip.budget.length) return html + emptyState(I.budget, "No expenses logged yet.", "add-expense", "Add first expense");
+    html += '<div class="card"><div class="list card-pad" style="padding-top:4px;padding-bottom:4px">';
+    trip.budget.forEach(e => {
+      const among = (e.splitAmong && e.splitAmong.length) ? e.splitAmong : trip.people.map(p=>p.id);
+      html += '<div class="row-item"><div class="row-main"><div class="row-title">'+esc(e.description||"Expense")+'</div>' +
+        '<div class="row-sub">Paid by '+esc(personName(trip,e.paidBy)||"?")+' · split '+among.length+' way'+(among.length===1?"":"s")+(e.date?' · '+esc(fmtDate(e.date,"md")):"")+'</div></div>' +
+        '<span class="pill muted num" style="font-family:var(--font-mono)">'+money(e.amount)+'</span>' +
+        rowActions("edit-expense","del-expense",e.id) + '</div>';
+    });
+    html += '</div></div>';
+    return html;
+  }
+  function expenseFields(trip) {
+    return [
+      { key:"description", label:"What was it?", type:"text", required:true, placeholder:"e.g. Groceries" },
+      { key:"amount", label:"Amount ($)", type:"number", required:true, placeholder:"0.00", row:true },
+      { key:"paidBy", label:"Paid by", type:"person" },
+      { key:"date", label:"Date", type:"date" },
+      { key:"splitAmong", label:"Split among", type:"multiperson", hint:"Everyone selected splits this evenly." },
+    ];
+  }
+  function computeSettle(trip) {
+    const bal = {}; trip.people.forEach(p => bal[p.id] = 0);
+    trip.budget.forEach(e => {
+      const amt = Number(e.amount)||0; if (!amt) return;
+      const among = (e.splitAmong && e.splitAmong.length) ? e.splitAmong.filter(id=>bal[id]!=null) : trip.people.map(p=>p.id);
+      if (!among.length) return;
+      const share = amt / among.length;
+      if (bal[e.paidBy] != null) bal[e.paidBy] += amt;
+      among.forEach(id => { bal[id] -= share; });
+    });
+    const debtors = [], creditors = [];
+    Object.keys(bal).forEach(id => { const v = Math.round(bal[id]*100)/100; if (v < -0.01) debtors.push({id, amt:-v}); else if (v > 0.01) creditors.push({id, amt:v}); });
+    debtors.sort((a,b)=>b.amt-a.amt); creditors.sort((a,b)=>b.amt-a.amt);
+    const out = []; let i=0, j=0;
+    while (i < debtors.length && j < creditors.length) {
+      const pay = Math.min(debtors[i].amt, creditors[j].amt);
+      out.push({ fromName: personName(trip,debtors[i].id), toName: personName(trip,creditors[j].id), amount: pay });
+      debtors[i].amt -= pay; creditors[j].amt -= pay;
+      if (debtors[i].amt < 0.01) i++; if (creditors[j].amt < 0.01) j++;
+    }
+    return out;
+  }
+
+  /* ---------- Notes & Checklist ---------- */
+  function secNotes(trip) {
+    const left = trip.checklist.filter(c=>!c.done).length;
+    let html = pageHead("Notes & Checklist", "Free notes plus a pre-departure checklist.", "");
+    html += '<div class="grid cols-2" style="align-items:start">';
+    // checklist
+    html += '<div><div class="section-title"><h3>Pre-departure checklist</h3><span class="label">'+left+' left</span></div>' +
+      '<div class="card"><div class="list card-pad" style="padding-top:4px;padding-bottom:4px" id="checklist">';
+    trip.checklist.forEach(c => {
+      html += '<div class="row-item'+(c.done?" done":"")+'">' +
+        '<input type="checkbox" class="check" '+(c.done?"checked":"")+' data-action="toggle-check" data-id="'+c.id+'">' +
+        '<div class="row-main"><div class="row-title">'+esc(c.text)+'</div></div>' +
+        '<button class="icon-btn" data-action="del-check" data-id="'+c.id+'">'+I.trash+'</button></div>';
+    });
+    html += '</div><div class="card-pad" style="border-top:1px solid var(--border);display:flex;gap:8px">' +
+      '<input type="text" id="newCheck" placeholder="Add a checklist item…" style="flex:1;padding:8px 11px;border:1px solid var(--border-strong);border-radius:8px;background:var(--surface-2);color:var(--ink)">' +
+      '<button class="btn primary" data-action="add-check">'+I.plus+'</button></div></div></div>';
+    // notes
+    html += '<div><div class="section-title"><h3>Notes</h3><span class="label">Auto-saved</span></div>' +
+      '<div class="card card-pad"><textarea id="tripNotes" placeholder="Reservation numbers, directions, reminders, anything…" ' +
+      'style="width:100%;min-height:320px;border:none;background:transparent;color:var(--ink);resize:vertical;font-family:var(--font-body);font-size:.95rem;line-height:1.6">'+esc(trip.notes||"")+'</textarea></div></div>';
+    html += '</div>';
+    return html;
+  }
+  function wireNotes(trip) {
+    const ta = document.getElementById("tripNotes");
+    if (ta) { let t; ta.addEventListener("input", () => { trip.notes = ta.value; clearTimeout(t); t = setTimeout(save, 400); }); }
+    const nc = document.getElementById("newCheck");
+    if (nc) nc.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); addCheck(nc.value); } });
+  }
+  function addCheck(v) {
+    v = (v||"").trim(); if (!v) return;
+    activeTrip().checklist.push({ id: uid(), text: v, done: false }); save(); renderSidebar; render();
+  }
+
+  function noPeopleNote() {
+    return '<div class="card card-pad" style="margin-bottom:18px;background:var(--warn-soft);border-color:transparent;display:flex;gap:10px;align-items:center">' +
+      '<span class="label" style="color:var(--warn)">Heads up</span><span style="font-size:.9rem">Add people in the <b>Guests</b> tab so you can assign them here.</span></div>';
+  }
+
+  /* =========================================================
+     ACTIONS
+  ========================================================= */
+  function findById(arr, id) { return arr.find(x => x.id === id); }
+
+  const ACTIONS = {
+    nav: (el) => { ui.section = el.dataset.section; render(); document.getElementById("content").scrollTop = 0; window.scrollTo(0,0); },
+    theme: () => cycleTheme(),
+    "switch-trip": (el) => { state.activeId = el.value; save(); ui.section = "overview"; render(); },
+    "new-trip": () => newTrip(),
+    "edit-trip": () => editTrip(),
+    export: () => doExport(),
+    import: () => doImport(),
+
+    // weather
+    "edit-weather": (el) => editWeather(el.dataset.id),
+
+    // meals
+    "add-meal": () => { const t = activeTrip(); openForm({ title:"Add meal", fields: mealFields(t), values:{ type:"Dinner", day:(tripDays(t)[0]||"") }, onSubmit: v => { t.meals.push(Object.assign({id:uid()}, v)); save(); render(); toast("Meal added"); } }); },
+    "edit-meal": (el) => { const t = activeTrip(); const m = findById(t.meals, el.dataset.id); openForm({ title:"Edit meal", fields: mealFields(t), values:m, onSubmit: v => { Object.assign(m, v); save(); render(); toast("Saved"); } }); },
+    "del-meal": (el) => delItem("meals", el.dataset.id, "Delete this meal?"),
+
+    // shopping
+    "add-shop": () => { const t = activeTrip(); openForm({ title:"Add item", fields: shopFields(t), values:{category:"Food & Drink"}, onSubmit: v => { t.shopping.push(Object.assign({id:uid(), gotIt:false}, v)); save(); render(); toast("Added to list"); } }); },
+    "edit-shop": (el) => { const t = activeTrip(); const s = findById(t.shopping, el.dataset.id); openForm({ title:"Edit item", fields: shopFields(t), values:s, onSubmit: v => { Object.assign(s, v); save(); render(); } }); },
+    "del-shop": (el) => delItem("shopping", el.dataset.id, "Remove this item?"),
+    "toggle-shop": (el) => { const s = findById(activeTrip().shopping, el.dataset.id); s.gotIt = el.checked; save(); render(); },
+    "clear-got": () => { const t = activeTrip(); const n = t.shopping.filter(x=>x.gotIt).length; if(!n){toast("Nothing checked");return;} confirmDialog("Clear checked items", "Remove "+n+" checked item"+(n===1?"":"s")+" from the list?", () => { t.shopping = t.shopping.filter(x=>!x.gotIt); save(); render(); toast("Cleared"); }, "Clear"); },
+
+    // roles
+    "add-role": () => { const t = activeTrip(); openForm({ title:"Add role", fields: roleFields(), onSubmit: v => { t.roles.push(Object.assign({id:uid()}, v)); save(); render(); toast("Role added"); } }); },
+    "edit-role": (el) => { const t = activeTrip(); const r = findById(t.roles, el.dataset.id); openForm({ title:"Edit role", fields: roleFields(), values:r, onSubmit: v => { Object.assign(r, v); save(); render(); } }); },
+    "del-role": (el) => delItem("roles", el.dataset.id, "Delete this role?"),
+
+    // schedule
+    "add-sched": () => { const t = activeTrip(); openForm({ title:"Add schedule item", fields: schedFields(t), values:{ day:(tripDays(t)[0]||"") }, onSubmit: v => { t.schedule.push(Object.assign({id:uid()}, v)); save(); render(); toast("Added"); } }); },
+    "edit-sched": (el) => { const t = activeTrip(); const s = findById(t.schedule, el.dataset.id); openForm({ title:"Edit schedule item", fields: schedFields(t), values:s, onSubmit: v => { Object.assign(s, v); save(); render(); } }); },
+    "del-sched": (el) => delItem("schedule", el.dataset.id, "Delete this item?"),
+
+    // packing
+    "add-pack": () => { const t = activeTrip(); openForm({ title:"Add packing item", fields: packFields(), values:{category:"Shelter & Sleep"}, onSubmit: v => { t.packing.push(Object.assign({id:uid(), packed:false}, v)); save(); render(); toast("Added"); } }); },
+    "edit-pack": (el) => { const t = activeTrip(); const p = findById(t.packing, el.dataset.id); openForm({ title:"Edit packing item", fields: packFields(), values:p, onSubmit: v => { Object.assign(p, v); save(); render(); } }); },
+    "del-pack": (el) => delItem("packing", el.dataset.id, "Remove this item?"),
+    "toggle-pack": (el) => { const p = findById(activeTrip().packing, el.dataset.id); p.packed = el.checked; save(); render(); },
+
+    // guests / people
+    "add-person": () => { openForm({ title:"Add person", fields:[{key:"name",label:"Name",type:"text",required:true,placeholder:"First name"}], onSubmit: v => { const t = activeTrip(); const pid = uid(); t.people.push({id:pid, name:v.name}); t.guests.push({id:uid(), personId:pid, rsvp:"Yes", arrival:"", contact:"", carpool:"", driver:false}); save(); render(); toast(v.name+" added"); } }); },
+    "edit-guest": (el) => { const t = activeTrip(); const pid = el.dataset.id; const person = findById(t.people, pid); let g = t.guests.find(x=>x.personId===pid); if(!g){ g = {id:uid(), personId:pid, rsvp:"", arrival:"", contact:"", carpool:"", driver:false}; t.guests.push(g); }
+      openForm({ title:"Edit "+person.name, fields:[{key:"name",label:"Name",type:"text",required:true}].concat(guestFields()), values:Object.assign({name:person.name}, g), onSubmit: v => { person.name = v.name; g.rsvp=v.rsvp; g.arrival=v.arrival; g.carpool=v.carpool; g.contact=v.contact; g.driver=v.driver; save(); render(); toast("Saved"); } }); },
+    "del-person": (el) => { const t = activeTrip(); const pid = el.dataset.id; const person = findById(t.people, pid); confirmDialog("Remove "+person.name+"?", "This removes them from the crew and unassigns them from roles, meals and packing.", () => {
+        t.people = t.people.filter(p=>p.id!==pid); t.guests = t.guests.filter(g=>g.personId!==pid);
+        t.roles.forEach(r=>{ if(r.personId===pid) r.personId=""; }); t.meals.forEach(m=>{ if(m.personId===pid) m.personId=""; }); t.packing.forEach(p=>{ if(p.personId===pid) p.personId=""; });
+        t.budget.forEach(e=>{ if(e.paidBy===pid) e.paidBy=""; if(e.splitAmong) e.splitAmong=e.splitAmong.filter(x=>x!==pid); });
+        save(); render(); toast("Removed"); }, "Remove"); },
+
+    // budget
+    "add-expense": () => { const t = activeTrip(); if(!t.people.length){toast("Add people first");return;} openForm({ title:"Add expense", fields: expenseFields(t), values:{ paidBy:(t.people[0]||{}).id, splitAmong:t.people.map(p=>p.id) }, onSubmit: v => { t.budget.push({id:uid(), description:v.description, amount:Number(v.amount)||0, paidBy:v.paidBy, date:v.date, splitAmong:v.splitAmong}); save(); render(); toast("Expense added"); } }); },
+    "edit-expense": (el) => { const t = activeTrip(); const e = findById(t.budget, el.dataset.id); openForm({ title:"Edit expense", fields: expenseFields(t), values:e, onSubmit: v => { Object.assign(e, {description:v.description, amount:Number(v.amount)||0, paidBy:v.paidBy, date:v.date, splitAmong:v.splitAmong}); save(); render(); } }); },
+    "del-expense": (el) => delItem("budget", el.dataset.id, "Delete this expense?"),
+
+    // checklist
+    "toggle-check": (el) => { const c = findById(activeTrip().checklist, el.dataset.id); c.done = el.checked; save(); render(); },
+    "del-check": (el) => { const t = activeTrip(); t.checklist = t.checklist.filter(c=>c.id!==el.dataset.id); save(); render(); },
+    "add-check": () => { const nc = document.getElementById("newCheck"); if(nc) addCheck(nc.value); },
+  };
+
+  function delItem(collection, id, msg) {
+    confirmDialog("Confirm delete", msg, () => { const t = activeTrip(); t[collection] = t[collection].filter(x=>x.id!==id); save(); render(); toast("Deleted"); });
+  }
+
+  function editWeather(date) {
+    const t = activeTrip();
+    let w = (t.weather||[]).find(x=>x.date===date);
+    const isNew = !w; if (isNew) w = { date };
+    openForm({ title: "Weather — "+fmtDate(date,"long"),
+      fields: [
+        { key:"high", label:"High (°C)", type:"number", placeholder:"e.g. 24", row:true },
+        { key:"low", label:"Low (°C)", type:"number", placeholder:"e.g. 13" },
+        { key:"condition", label:"Conditions", type:"select", options:["Sunny","Partly cloudy","Cloudy","Light rain","Rain","Thunderstorms","Windy","Fog"] },
+        { key:"precip", label:"Precipitation", type:"text", placeholder:"e.g. 20% / 5mm", row:true },
+        { key:"notes", label:"Notes", type:"text", placeholder:"Optional" },
+      ], values: w,
+      onSubmit: v => { Object.assign(w, v); if (isNew) t.weather.push(w); save(); render(); toast("Forecast saved"); } });
+  }
+
+  /* ---------- Trip management ---------- */
+  const tripFields = [
+    { key:"name", label:"Trip name", type:"text", required:true, placeholder:"e.g. Cottage Weekend" },
+    { key:"location", label:"Location", type:"text", placeholder:"Park / town / region" },
+    { key:"site", label:"Site / address detail", type:"text", placeholder:"e.g. Campground — Site 12" },
+    { key:"startDate", label:"Start date", type:"date", row:true },
+    { key:"endDate", label:"End date", type:"date" },
+  ];
+  function newTrip() {
+    openForm({ title:"New trip", submitLabel:"Create trip", fields: tripFields, values:{}, onSubmit: v => {
+      const t = blankTrip(v.name); t.location=v.location; t.site=v.site; t.startDate=v.startDate; t.endDate=v.endDate;
+      state.trips.push(t); state.activeId = t.id; ui.section = "overview"; save(); render();
+      toast("Trip created — add your crew in Guests");
+    }});
+  }
+  function editTrip() {
+    const t = activeTrip();
+    const fields = tripFields.concat([]);
+    openForm({ title:"Trip details", fields: fields, values: t, onSubmit: v => {
+      Object.assign(t, { name:v.name, location:v.location, site:v.site, startDate:v.startDate, endDate:v.endDate });
+      save(); render(); toast("Trip updated");
+    }, extraFooter: true });
+    // add a delete-trip control into the modal footer
+    if (state.trips.length > 1) {
+      const foot = document.querySelector("#overlay .modal-foot");
+      if (foot) { const b = document.createElement("button"); b.type="button"; b.className="btn danger"; b.style.marginRight="auto";
+        b.textContent = "Delete trip"; b.addEventListener("click", () => { closeModal(); confirmDialog("Delete "+t.name+"?", "This permanently removes the trip and all its data from this device.", () => { state.trips = state.trips.filter(x=>x.id!==t.id); state.activeId = state.trips[0].id; ui.section="overview"; save(); render(); toast("Trip deleted"); }); });
+        foot.insertBefore(b, foot.firstChild); }
+    }
+  }
+
+  /* ---------- Export / Import ---------- */
+  async function doExport() {
+    const data = JSON.stringify(state, null, 2);
+    const fname = "basecamp-trips-" + todayISO() + ".json";
+    if (window.claude && window.claude.downloads && typeof window.claude.downloads.save === "function") {
+      try { await window.claude.downloads.save({ filename: fname, data }); toast("Backup saved"); return; }
+      catch (e) { if (e && e.code === "user_rejected") { toast("Export cancelled"); return; } /* fall through */ }
+    }
+    // fallback: data-uri download
+    try {
+      const a = document.createElement("a");
+      a.href = "data:application/json;charset=utf-8," + encodeURIComponent(data);
+      a.download = fname; document.body.appendChild(a); a.click(); a.remove();
+      toast("Backup downloaded");
+    } catch (e) { toast("Export not available here"); }
+  }
+  function doImport() {
+    const inp = document.createElement("input"); inp.type = "file"; inp.accept = "application/json,.json";
+    inp.addEventListener("change", () => {
+      const file = inp.files[0]; if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const data = JSON.parse(reader.result);
+          if (!data || !Array.isArray(data.trips)) throw new Error("bad");
+          confirmDialog("Import backup", "This replaces all "+state.trips.length+" trip"+(state.trips.length===1?"":"s")+" currently on this device with "+data.trips.length+" from the file. Export first if you want to keep the current data.", () => {
+            state = data; if (!state.activeId || !state.trips.find(t=>t.id===state.activeId)) state.activeId = state.trips[0].id;
+            state.trips.forEach(t => { ["weather","meals","shopping","roles","schedule","packing","guests","budget","checklist","people"].forEach(k=>{ if(!Array.isArray(t[k])) t[k]=[]; }); if(typeof t.notes!=="string") t.notes=""; });
+            ui.section = "overview"; applyTheme(); save(); render(); toast("Imported "+data.trips.length+" trip"+(data.trips.length===1?"":"s"));
+          }, "Replace & import");
+        } catch (e) { toast("Couldn't read that file — is it a Basecamp backup?"); }
+      };
+      reader.readAsText(file);
+    });
+    inp.click();
+  }
+
+  /* ---------- Global event handling ---------- */
+  document.addEventListener("click", e => {
+    const closeBtn = e.target.closest("[data-close]");
+    if (closeBtn) { closeModal(); return; }
+    if (e.target.id === "overlay") { closeModal(); return; }
+    const actEl = e.target.closest("[data-action]");
+    if (!actEl) return;
+    // checkboxes handled on change, not click
+    if (actEl.matches('input[type="checkbox"]')) return;
+    const fn = ACTIONS[actEl.dataset.action];
+    if (fn) { e.preventDefault(); fn(actEl); }
+  });
+  document.addEventListener("change", e => {
+    const actEl = e.target.closest("[data-action]");
+    if (!actEl) return;
+    if (actEl.tagName === "SELECT" && actEl.dataset.action === "switch-trip") { ACTIONS["switch-trip"](actEl); return; }
+    if (actEl.matches('input[type="checkbox"]')) { const fn = ACTIONS[actEl.dataset.action]; if (fn) fn(actEl); }
+  });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && document.getElementById("overlay").classList.contains("open")) closeModal(); });
+
+  init();
+})();
+</script>
