@@ -200,6 +200,15 @@
   .avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--accent-soft); color: var(--accent-ink);
     display: grid; place-content: center; font-size: .78rem; font-weight: 700; flex: none; font-family: var(--font-mono); }
 
+  .assign-wrap { display: inline-flex; align-items: center; gap: 6px; flex: none; }
+  .assign-wrap .label { margin: 0; }
+  .inline-select { padding: 5px 26px 5px 10px; border: 1px solid var(--border-strong); border-radius: 20px;
+    background: var(--surface-2); color: var(--ink); font-size: .8rem; max-width: 132px; appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.5'><path d='M6 9l6 6 6-6'/></svg>");
+    background-repeat: no-repeat; background-position: right 8px center; cursor: pointer; }
+  .inline-select:hover { border-color: var(--accent); }
+  .inline-select:focus { outline: 2px solid var(--accent); outline-offset: 0; border-color: var(--accent); }
+
   .day-head { display: flex; align-items: baseline; gap: 10px; margin: 22px 0 10px; }
   .day-head h4 { font-family: var(--font-display); font-size: 1.15rem; }
 
@@ -710,6 +719,11 @@
     const n = personName(trip, id); if (!n) return '<span class="pill muted">Unassigned</span>';
     return '<span class="avatar" title="'+esc(n)+'">'+initials(n)+'</span>';
   }
+  function personSelectInline(trip, currentId, action, id) {
+    const opts = '<option value="">— Unassigned —</option>' + (trip.people||[]).map(p =>
+      '<option value="'+p.id+'"'+(p.id===currentId?" selected":"")+'>'+esc(p.name)+'</option>').join("");
+    return '<select class="inline-select" data-action="'+action+'" data-id="'+id+'" aria-label="Assign a person">'+opts+'</select>';
+  }
 
   function renderSection() {
     const trip = activeTrip();
@@ -853,7 +867,7 @@
           '<span class="pill green" style="min-width:74px;justify-content:center">'+esc(m.type||"Meal")+'</span>' +
           '<div class="row-main"><div class="row-title">'+esc(m.name||"(unnamed)")+'</div>' +
           (m.notes?'<div class="row-sub">'+esc(m.notes)+'</div>':"") + '</div>' +
-          (m.personId?'<span class="pill muted" style="gap:6px">'+personBadge(trip,m.personId)+'<span style="font-family:var(--font-body);font-weight:500">'+esc(personName(trip,m.personId))+'</span></span>':'<span class="pill muted">cook: TBD</span>') +
+          '<span class="assign-wrap"><span class="label">Cook</span>'+personSelectInline(trip, m.personId, "assign-meal", m.id)+'</span>' +
           rowActions("edit-meal","del-meal",m.id) + '</div>';
       });
       html += '</div></div>';
@@ -874,7 +888,8 @@
   /* ---------- Shopping ---------- */
   function secShopping(trip) {
     const left = trip.shopping.filter(x=>!x.gotIt).length;
-    let html = pageHead("Shopping List", left+" item"+(left===1?"":"s")+" still to buy.",
+    const spent = shoppingSpent(trip);
+    let html = pageHead("Shopping List", left+" item"+(left===1?"":"s")+" still to buy"+(spent>0?' · <span class="num">'+money(spent)+'</span> spent so far':"")+".",
       '<button class="btn" data-action="clear-got">Clear checked</button>' + addBtn("add-shop","Add item"));
     if (!trip.shopping.length) return html + emptyState(I.shopping, "Nothing on the list yet. Add supplies and groceries.", "add-shop", "Add first item");
     const cats = {};
@@ -884,10 +899,20 @@
       html += '<div class="day-head"><h4>'+esc(cat)+'</h4><span class="label">'+items.filter(i=>i.gotIt).length+'/'+items.length+'</span></div>';
       html += '<div class="card"><div class="list card-pad" style="padding-top:4px;padding-bottom:4px">';
       items.forEach(s => {
+        const priced = Number(s.price) > 0;
+        const nSplit = (s.splitAmong && s.splitAmong.length) ? s.splitAmong.length : trip.people.length;
+        const sub = [];
+        if (s.forMeal) sub.push("for " + esc(s.forMeal));
+        if (s.gotIt && priced) sub.push("paid by " + (esc(personName(trip, s.paidBy)) || "someone") + " · split " + nSplit + " way" + (nSplit === 1 ? "" : "s"));
+        let priceCtl = "";
+        if (s.gotIt) priceCtl = priced
+          ? '<button class="pill green" data-action="shop-price" data-id="'+s.id+'" title="Edit price">'+money(s.price)+'</button>'
+          : '<button class="btn sm" data-action="shop-price" data-id="'+s.id+'" style="color:var(--muted)">+ add price</button>';
         html += '<div class="row-item'+(s.gotIt?" done":"")+'">' +
           '<input type="checkbox" class="check" '+(s.gotIt?"checked":"")+' data-action="toggle-shop" data-id="'+s.id+'">' +
           '<div class="row-main"><div class="row-title">'+esc(s.item)+(s.qty?' <span class="label" style="text-transform:none;letter-spacing:0">· '+esc(s.qty)+'</span>':"")+'</div>' +
-          (s.forMeal?'<div class="row-sub">for '+esc(s.forMeal)+'</div>':"") + '</div>' +
+          (sub.length?'<div class="row-sub">'+sub.join(" · ")+'</div>':"") + '</div>' +
+          priceCtl +
           rowActions("edit-shop","del-shop",s.id) + '</div>';
       });
       html += '</div></div>';
@@ -975,8 +1000,8 @@
       items.forEach(p => {
         html += '<div class="row-item'+(p.packed?" done":"")+'">' +
           '<input type="checkbox" class="check" '+(p.packed?"checked":"")+' data-action="toggle-pack" data-id="'+p.id+'">' +
-          '<div class="row-main"><div class="row-title">'+esc(p.item)+'</div>' +
-          (p.personId?'<div class="row-sub">'+esc(personName(trip,p.personId))+' is bringing it</div>':"") + '</div>' +
+          '<div class="row-main"><div class="row-title">'+esc(p.item)+'</div></div>' +
+          '<span class="assign-wrap"><span class="label">Bringing</span>'+personSelectInline(trip, p.personId, "assign-pack", p.id)+'</span>' +
           rowActions("edit-pack","del-pack",p.id) + '</div>';
       });
       html += '</div></div>';
@@ -1036,39 +1061,57 @@
 
   /* ---------- Budget ---------- */
   function secBudget(trip) {
-    const total = trip.budget.reduce((s,e)=>s+(Number(e.amount)||0),0);
-    let html = pageHead("Budget & Split", "Shared expenses, split automatically.", addBtn("add-expense","Add expense"));
+    const shopPurchases = (trip.shopping||[]).filter(s => s.gotIt && Number(s.price) > 0);
+    const manualTotal = trip.budget.reduce((s,e)=>s+(Number(e.amount)||0),0);
+    const shopTotal = shopPurchases.reduce((s,x)=>s+(Number(x.price)||0),0);
+    const total = manualTotal + shopTotal;
+    const itemCount = trip.budget.length + shopPurchases.length;
+    let html = pageHead("Budget & Split", "Expenses and shopping purchases, split automatically.", addBtn("add-expense","Add expense"));
     if (!trip.people.length) html += noPeopleNote();
-    // summary tiles
     const perHead = trip.people.length ? total/trip.people.length : 0;
     html += '<div class="grid cols-3 section-block">' +
-      statTile("Total spent", '<span class="num">'+money(total)+'</span>', trip.budget.length+" expense"+(trip.budget.length===1?"":"s")) +
-      statTile("Per person", '<span class="num">'+money(perHead)+'</span>', "even split of all shared costs") +
-      statTile("Expenses", '<span class="num">'+trip.budget.length+'</span>', "logged") +
+      statTile("Total spent", '<span class="num">'+money(total)+'</span>', shopTotal>0?("incl. "+money(shopTotal)+" from shopping"):(itemCount+" item"+(itemCount===1?"":"s"))) +
+      statTile("Per person", '<span class="num">'+money(perHead)+'</span>', "even split across the group") +
+      statTile("Purchases", '<span class="num">'+itemCount+'</span>', "expenses + bought items") +
     '</div>';
 
-    // settle up
+    // settle up (includes shopping)
     const settle = computeSettle(trip);
     html += '<div class="section-block"><div class="section-title"><h3>Settle up</h3><span class="label">Fewest transfers</span></div><div class="card card-pad">';
-    if (!trip.budget.length) html += '<p style="color:var(--muted);margin:0">Add expenses to see who owes whom.</p>';
-    else if (!settle.length) html += '<p style="color:var(--accent-ink);margin:0">All square — everyone\'s even. 🎒</p>'.replace("🎒","");
+    if (!itemCount) html += '<p style="color:var(--muted);margin:0">Add an expense, or price a bought shopping item, to see who owes whom.</p>';
+    else if (!settle.length) html += '<p style="color:var(--accent-ink);margin:0">All square — everyone\'s even.</p>';
     else html += settle.map(s => '<div class="settle"><span class="avatar">'+initials(s.fromName)+'</span><span>'+esc(s.fromName)+'</span>' +
       '<span class="arrow">→ pays →</span><span class="avatar">'+initials(s.toName)+'</span><span>'+esc(s.toName)+'</span>' +
       '<span class="amt">'+money(s.amount)+'</span></div>').join("");
     html += '</div></div>';
 
-    // expense list
+    // manual expenses
     html += '<div class="section-title"><h3>Expenses</h3></div>';
-    if (!trip.budget.length) return html + emptyState(I.budget, "No expenses logged yet.", "add-expense", "Add first expense");
-    html += '<div class="card"><div class="list card-pad" style="padding-top:4px;padding-bottom:4px">';
-    trip.budget.forEach(e => {
-      const among = (e.splitAmong && e.splitAmong.length) ? e.splitAmong : trip.people.map(p=>p.id);
-      html += '<div class="row-item"><div class="row-main"><div class="row-title">'+esc(e.description||"Expense")+'</div>' +
-        '<div class="row-sub">Paid by '+esc(personName(trip,e.paidBy)||"?")+' · split '+among.length+' way'+(among.length===1?"":"s")+(e.date?' · '+esc(fmtDate(e.date,"md")):"")+'</div></div>' +
-        '<span class="pill muted num" style="font-family:var(--font-mono)">'+money(e.amount)+'</span>' +
-        rowActions("edit-expense","del-expense",e.id) + '</div>';
-    });
-    html += '</div></div>';
+    if (!trip.budget.length) html += '<div class="card card-pad" style="color:var(--muted)">No manual expenses yet. Shopping purchases you price up (below) still count toward the split.</div>';
+    else {
+      html += '<div class="card"><div class="list card-pad" style="padding-top:4px;padding-bottom:4px">';
+      trip.budget.forEach(e => {
+        const among = (e.splitAmong && e.splitAmong.length) ? e.splitAmong : trip.people.map(p=>p.id);
+        html += '<div class="row-item"><div class="row-main"><div class="row-title">'+esc(e.description||"Expense")+'</div>' +
+          '<div class="row-sub">Paid by '+esc(personName(trip,e.paidBy)||"?")+' · split '+among.length+' way'+(among.length===1?"":"s")+(e.date?' · '+esc(fmtDate(e.date,"md")):"")+'</div></div>' +
+          '<span class="pill muted num" style="font-family:var(--font-mono)">'+money(e.amount)+'</span>' +
+          rowActions("edit-expense","del-expense",e.id) + '</div>';
+      });
+      html += '</div></div>';
+    }
+
+    // shopping purchases (priced in the Shopping tab; shown here so the split is transparent)
+    if (shopPurchases.length) {
+      html += '<div class="day-head"><h4>From shopping</h4><button class="btn sm" data-action="nav" data-section="shopping">Open Shopping</button></div>';
+      html += '<div class="card"><div class="list card-pad" style="padding-top:4px;padding-bottom:4px">';
+      shopPurchases.forEach(s => {
+        const among = (s.splitAmong && s.splitAmong.length) ? s.splitAmong : trip.people.map(p=>p.id);
+        html += '<div class="row-item"><div class="row-main"><div class="row-title">'+esc(s.item)+'</div>' +
+          '<div class="row-sub">Paid by '+esc(personName(trip,s.paidBy)||"?")+' · split '+among.length+' way'+(among.length===1?"":"s")+'</div></div>' +
+          '<button class="pill green" data-action="shop-price" data-id="'+s.id+'" title="Edit price">'+money(s.price)+'</button></div>';
+      });
+      html += '</div></div>';
+    }
     return html;
   }
   function expenseFields(trip) {
@@ -1080,9 +1123,19 @@
       { key:"splitAmong", label:"Split among", type:"multiperson", hint:"Everyone selected splits this evenly." },
     ];
   }
+  function shoppingSpent(trip) {
+    return (trip.shopping||[]).reduce((sum, x) => sum + ((x.gotIt && Number(x.price) > 0) ? Number(x.price) : 0), 0);
+  }
+  function gatherExpenses(trip) {
+    // Unified money: manual expenses + priced, bought shopping items (both need a payer to be split).
+    const list = [];
+    (trip.budget||[]).forEach(e => { if (e.paidBy) list.push({ amount: Number(e.amount)||0, paidBy: e.paidBy, splitAmong: e.splitAmong }); });
+    (trip.shopping||[]).forEach(s => { if (s.gotIt && Number(s.price) > 0 && s.paidBy) list.push({ amount: Number(s.price)||0, paidBy: s.paidBy, splitAmong: s.splitAmong }); });
+    return list;
+  }
   function computeSettle(trip) {
     const bal = {}; trip.people.forEach(p => bal[p.id] = 0);
-    trip.budget.forEach(e => {
+    gatherExpenses(trip).forEach(e => {
       const amt = Number(e.amount)||0; if (!amt) return;
       const among = (e.splitAmong && e.splitAmong.length) ? e.splitAmong.filter(id=>bal[id]!=null) : trip.people.map(p=>p.id);
       if (!among.length) return;
@@ -1169,7 +1222,10 @@
     "add-shop": () => { const t = activeTrip(); openForm({ title:"Add item", fields: shopFields(t), values:{category:"Food & Drink"}, onSubmit: v => { t.shopping.push(Object.assign({id:uid(), gotIt:false}, v)); save(); render(); toast("Added to list"); } }); },
     "edit-shop": (el) => { const t = activeTrip(); const s = findById(t.shopping, el.dataset.id); openForm({ title:"Edit item", fields: shopFields(t), values:s, onSubmit: v => { Object.assign(s, v); save(); render(); } }); },
     "del-shop": (el) => delItem("shopping", el.dataset.id, "Remove this item?"),
-    "toggle-shop": (el) => { const s = findById(activeTrip().shopping, el.dataset.id); s.gotIt = el.checked; save(); render(); },
+    "toggle-shop": (el) => { const s = findById(activeTrip().shopping, el.dataset.id); s.gotIt = el.checked; save(); render(); if (el.checked && !(Number(s.price) > 0) && activeTrip().people.length) openShopPrice(s); },
+    "shop-price": (el) => { const s = findById(activeTrip().shopping, el.dataset.id); if (s) openShopPrice(s); },
+    "assign-pack": (el) => { const p = findById(activeTrip().packing, el.dataset.id); if (p) { p.personId = el.value; save(); render(); } },
+    "assign-meal": (el) => { const m = findById(activeTrip().meals, el.dataset.id); if (m) { m.personId = el.value; save(); render(); } },
     "clear-got": () => { const t = activeTrip(); const n = t.shopping.filter(x=>x.gotIt).length; if(!n){toast("Nothing checked");return;} confirmDialog("Clear checked items", "Remove "+n+" checked item"+(n===1?"":"s")+" from the list?", () => { t.shopping = t.shopping.filter(x=>!x.gotIt); save(); render(); toast("Cleared"); }, "Clear"); },
 
     // roles
@@ -1226,6 +1282,25 @@
         { key:"notes", label:"Notes", type:"text", placeholder:"Optional" },
       ], values: w,
       onSubmit: v => { Object.assign(w, v); if (isNew) t.weather.push(w); save(); render(); toast("Forecast saved"); } });
+  }
+
+  function openShopPrice(s) {
+    const t = activeTrip();
+    if (!t.people.length) { toast("Add people first so the cost can be split"); return; }
+    openForm({ title: "Price — " + (s.item || "item"), submitLabel: "Save",
+      fields: [
+        { key:"price", label:"Price ($)", type:"number", placeholder:"0.00", hint:"Leave blank if you don't know it yet — the item stays checked." },
+        { key:"paidBy", label:"Who paid", type:"person" },
+        { key:"splitAmong", label:"Split among", type:"multiperson", hint:"Everyone selected splits it evenly. This flows into the Budget settle-up." },
+      ],
+      values: { price: (s.price===0||s.price)?s.price:"", paidBy: s.paidBy || (t.people[0]||{}).id, splitAmong: (s.splitAmong && s.splitAmong.length) ? s.splitAmong : t.people.map(p=>p.id) },
+      onSubmit: v => {
+        s.price = (v.price === "" ? "" : (Number(v.price)||0));
+        s.paidBy = v.paidBy; s.splitAmong = v.splitAmong;
+        save(); render();
+        if (Number(s.price) > 0) toast(money(s.price)+" added to the split");
+      }
+    });
   }
 
   /* ---------- Trip management ---------- */
@@ -1303,15 +1378,15 @@
     if (e.target.id === "overlay") { closeModal(); return; }
     const actEl = e.target.closest("[data-action]");
     if (!actEl) return;
-    // checkboxes handled on change, not click
-    if (actEl.matches('input[type="checkbox"]')) return;
+    // checkboxes and selects are handled on 'change', not click
+    if (actEl.matches('input[type="checkbox"]') || actEl.tagName === "SELECT") return;
     const fn = ACTIONS[actEl.dataset.action];
     if (fn) { e.preventDefault(); fn(actEl); }
   });
   document.addEventListener("change", e => {
     const actEl = e.target.closest("[data-action]");
     if (!actEl) return;
-    if (actEl.tagName === "SELECT" && actEl.dataset.action === "switch-trip") { ACTIONS["switch-trip"](actEl); return; }
+    if (actEl.tagName === "SELECT") { const fn = ACTIONS[actEl.dataset.action]; if (fn) fn(actEl); return; }
     if (actEl.matches('input[type="checkbox"]')) { const fn = ACTIONS[actEl.dataset.action]; if (fn) fn(actEl); }
   });
   document.addEventListener("keydown", e => { if (e.key === "Escape" && document.getElementById("overlay").classList.contains("open")) closeModal(); });
