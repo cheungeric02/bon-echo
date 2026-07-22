@@ -1378,11 +1378,19 @@
   async function geocode(name) {
     if (!name) return null;
     if (geoCache[name]) return geoCache[name];
-    try {
-      const r = await fetch("https://geocoding-api.open-meteo.com/v1/search?count=1&language=en&name=" + encodeURIComponent(name));
-      const j = await r.json();
-      if (j.results && j.results.length) { const g = { lat: j.results[0].latitude, lon: j.results[0].longitude, place: j.results[0].name }; geoCache[name] = g; return g; }
-    } catch (e) {}
+    // Try progressively simpler forms — geocoders often fail on "Place, Province" but succeed on "Place".
+    const candidates = [name];
+    if (name.indexOf(",") >= 0) candidates.push(name.split(",")[0].trim());
+    const words = name.replace(/,/g, " ").split(/\s+/).filter(Boolean);
+    if (words.length > 3) candidates.push(words.slice(0, 3).join(" "));
+    if (words.length > 2) candidates.push(words.slice(0, 2).join(" "));
+    for (let i = 0; i < candidates.length; i++) {
+      try {
+        const r = await fetch("https://geocoding-api.open-meteo.com/v1/search?count=1&language=en&name=" + encodeURIComponent(candidates[i]));
+        const j = await r.json();
+        if (j.results && j.results.length) { const g = { lat: j.results[0].latitude, lon: j.results[0].longitude, place: j.results[0].name }; geoCache[name] = g; return g; }
+      } catch (e) {}
+    }
     return null;
   }
   function liveWxShell(inner) { return '<div class="section-title" style="margin-bottom:6px"><div><h3>Right now</h3><div class="label">Live conditions</div></div></div>' + inner; }
