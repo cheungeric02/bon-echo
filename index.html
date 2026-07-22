@@ -374,7 +374,9 @@
   let state = null;
   let ui = { section: "overview" };
 
-  function save() { try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) { console.warn("save failed", e); } }
+  function saveLocal() { try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) { console.warn("save failed", e); } }
+  function syncActive() { const t = activeTrip(); if (t && window.BCsync && window.BCsync.ready) window.BCsync.writeTrip(t.id, t); }
+  function save() { saveLocal(); syncActive(); }
   function load() {
     try { const raw = localStorage.getItem(LS_KEY); if (raw) return JSON.parse(raw); } catch (e) {}
     return null;
@@ -523,7 +525,7 @@
   }
   function cycleTheme() {
     const order = ["auto","light","dark"]; const cur = state.theme || "auto";
-    state.theme = order[(order.indexOf(cur)+1) % 3]; save(); applyTheme();
+    state.theme = order[(order.indexOf(cur)+1) % 3]; saveLocal(); applyTheme();
     toast("Theme: " + state.theme);
   }
 
@@ -660,6 +662,7 @@
 
   function renderSidebar(trip) {
     const c = counts(trip);
+    const live = !!(window.BCsync && window.BCsync.ready);
     const themeLabel = { auto: "Auto", light: "Light", dark: "Dark" }[state.theme||"auto"];
     return '<aside class="sidebar">' +
       '<div class="brand"><div class="brand-mark">'+I.logo+'<div><div class="brand-name">Basecamp</div>' +
@@ -681,6 +684,9 @@
         '<button class="btn sm" data-action="export" title="Download a backup">'+I.download+' Export</button>' +
         '<button class="btn sm" data-action="import" title="Load a backup">'+I.upload+' Import</button>' +
         '<button class="btn sm" data-action="theme" title="Toggle theme">'+I.theme+' '+themeLabel+'</button>' +
+        '<div class="label" style="width:100%;margin-top:8px;display:flex;align-items:center;gap:7px;text-transform:none;letter-spacing:.02em">' +
+          '<span style="width:8px;height:8px;border-radius:50%;flex:none;background:'+(live?"var(--accent)":"var(--muted)")+'"></span>' +
+          (live ? "Live sync on — shared with your group" : "Local only (this device)") + '</div>' +
       '</div>' +
     '</aside>';
   }
@@ -1145,7 +1151,7 @@
   const ACTIONS = {
     nav: (el) => { ui.section = el.dataset.section; render(); document.getElementById("content").scrollTop = 0; window.scrollTo(0,0); },
     theme: () => cycleTheme(),
-    "switch-trip": (el) => { state.activeId = el.value; save(); ui.section = "overview"; render(); },
+    "switch-trip": (el) => { state.activeId = el.value; saveLocal(); ui.section = "overview"; render(); },
     "new-trip": () => newTrip(),
     "edit-trip": () => editTrip(),
     export: () => doExport(),
@@ -1248,7 +1254,7 @@
     if (state.trips.length > 1) {
       const foot = document.querySelector("#overlay .modal-foot");
       if (foot) { const b = document.createElement("button"); b.type="button"; b.className="btn danger"; b.style.marginRight="auto";
-        b.textContent = "Delete trip"; b.addEventListener("click", () => { closeModal(); confirmDialog("Delete "+t.name+"?", "This permanently removes the trip and all its data from this device.", () => { state.trips = state.trips.filter(x=>x.id!==t.id); state.activeId = state.trips[0].id; ui.section="overview"; save(); render(); toast("Trip deleted"); }); });
+        b.textContent = "Delete trip"; b.addEventListener("click", () => { closeModal(); confirmDialog("Delete "+t.name+"?", "This permanently removes the trip and all its data for everyone.", () => { const delId = t.id; state.trips = state.trips.filter(x=>x.id!==delId); state.activeId = state.trips[0].id; ui.section="overview"; saveLocal(); if (window.BCsync && window.BCsync.ready) window.BCsync.removeTrip(delId); render(); toast("Trip deleted"); }); });
         foot.insertBefore(b, foot.firstChild); }
     }
   }
@@ -1281,7 +1287,7 @@
           confirmDialog("Import backup", "This replaces all "+state.trips.length+" trip"+(state.trips.length===1?"":"s")+" currently on this device with "+data.trips.length+" from the file. Export first if you want to keep the current data.", () => {
             state = data; if (!state.activeId || !state.trips.find(t=>t.id===state.activeId)) state.activeId = state.trips[0].id;
             state.trips.forEach(t => { ["weather","meals","shopping","roles","schedule","packing","guests","budget","checklist","people"].forEach(k=>{ if(!Array.isArray(t[k])) t[k]=[]; }); if(typeof t.notes!=="string") t.notes=""; });
-            ui.section = "overview"; applyTheme(); save(); render(); toast("Imported "+data.trips.length+" trip"+(data.trips.length===1?"":"s"));
+            ui.section = "overview"; applyTheme(); saveLocal(); if (window.BCsync && window.BCsync.ready) window.BCsync.writeAll(state.trips); render(); toast("Imported "+data.trips.length+" trip"+(data.trips.length===1?"":"s"));
           }, "Replace & import");
         } catch (e) { toast("Couldn't read that file — is it a Basecamp backup?"); }
       };
@@ -1310,6 +1316,96 @@
   });
   document.addEventListener("keydown", e => { if (e.key === "Escape" && document.getElementById("overlay").classList.contains("open")) closeModal(); });
 
+  /* ---------- Collaboration hooks (used by the Firebase module below) ---------- */
+  function ensureShape(t) {
+    ["weather","meals","shopping","roles","schedule","packing","guests","budget","checklist","people"].forEach(k => { if (!Array.isArray(t[k])) t[k] = []; });
+    if (typeof t.notes !== "string") t.notes = "";
+  }
+  function isEditing() {
+    const ov = document.getElementById("overlay");
+    if (ov && ov.classList.contains("open")) return true;
+    const a = document.activeElement;
+    return !!(a && (a.id === "tripNotes" || a.id === "newCheck"));
+  }
+  window.__bcApp = {
+    getLocalTrips() { return state.trips; },
+    refresh() { render(); },
+    syncError() { toast("Sync issue — check the database rules in Firebase"); },
+    applyRemote(remoteTrips) {
+      if (!Array.isArray(remoteTrips) || !remoteTrips.length) return;
+      const byId = {};
+      remoteTrips.forEach(t => { ensureShape(t); byId[t.id] = t; });
+      // update existing trips in place (preserves object refs held by open editors), add new ones
+      remoteTrips.forEach(rt => { const lt = state.trips.find(t => t.id === rt.id); if (lt) Object.assign(lt, rt); else state.trips.push(rt); });
+      // drop any local trips that no longer exist remotely (remote is the source of truth)
+      state.trips = state.trips.filter(t => byId[t.id]);
+      if (!state.trips.find(t => t.id === state.activeId)) state.activeId = (state.trips[0] || {}).id;
+      saveLocal();
+      if (!isEditing()) render();
+    }
+  };
+
   init();
 })();
+</script>
+
+<!-- ============================================================
+     LIVE SYNC (Firebase) — makes Basecamp collaborative.
+     Paste your Firebase config in the marked block below.
+     Until you do, the app runs fine in local-only mode.
+============================================================ -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+  import { getDatabase, ref, onValue, set, remove } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
+
+  /* ⬇⬇⬇  PASTE YOUR FIREBASE CONFIG BETWEEN THE BRACES  ⬇⬇⬇ */
+  const firebaseConfig = {
+    apiKey: "AIzaSyD9AJbPC9M4gpTyvfIoRcqILq0ZOom1OBs",
+    authDomain: "bon-echo-bd946.firebaseapp.com",
+    databaseURL: "https://bon-echo-bd946-default-rtdb.firebaseio.com",
+    projectId: "bon-echo-bd946",
+    storageBucket: "bon-echo-bd946.firebasestorage.app",
+    messagingSenderId: "196437731482",
+    appId: "1:196437731482:web:3ac836962ce7d89e735723"
+  };
+  /* ⬆⬆⬆  ------------------------------------------------  ⬆⬆⬆ */
+
+  const notConfigured = JSON.stringify(firebaseConfig).includes("PASTE_HERE");
+  if (notConfigured) {
+    console.info("[Basecamp] Firebase not set up yet — running in local-only mode.");
+  } else {
+    try {
+      const app = initializeApp(firebaseConfig);
+      const db = getDatabase(app);
+      const tripsRef = ref(db, "trips");
+      window.BCsync = {
+        ready: true,
+        writeTrip(id, trip) { set(ref(db, "trips/" + id), JSON.stringify(trip)).catch(e => console.warn("write failed", e)); },
+        writeAll(trips) { const o = {}; trips.forEach(t => { o[t.id] = JSON.stringify(t); }); set(tripsRef, o).catch(e => console.warn("writeAll failed", e)); },
+        removeTrip(id) { remove(ref(db, "trips/" + id)).catch(e => console.warn("remove failed", e)); }
+      };
+      if (window.__bcApp) window.__bcApp.refresh(); // reflect "Live sync on"
+      let seeded = false;
+      onValue(tripsRef, snap => {
+        const val = snap.val();
+        if (!val) {
+          // First person to connect seeds the shared database from their local copy.
+          if (!seeded && window.__bcApp) {
+            seeded = true;
+            const local = window.__bcApp.getLocalTrips();
+            if (local && local.length) window.BCsync.writeAll(local);
+          }
+          return;
+        }
+        const trips = Object.keys(val).map(k => { try { return JSON.parse(val[k]); } catch (e) { return null; } }).filter(Boolean);
+        if (window.__bcApp) window.__bcApp.applyRemote(trips);
+      }, err => {
+        console.warn("[Basecamp] Database read error:", err);
+        if (window.__bcApp) window.__bcApp.syncError(err);
+      });
+    } catch (e) {
+      console.error("[Basecamp] Firebase init failed:", e);
+    }
+  }
+</script>
 </script>
