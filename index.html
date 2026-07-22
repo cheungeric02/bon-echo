@@ -105,6 +105,7 @@
   .nav-item .badge { margin-left: auto; font-family: var(--font-mono); font-size: .7rem;
     background: var(--surface-2); color: var(--muted); padding: 1px 7px; border-radius: 20px; }
   .nav-item.active .badge { background: var(--surface); color: var(--accent-ink); }
+  .nav-short { display: none; }
 
   .sidebar-foot { padding: 12px 14px; border-top: 1px solid var(--border); display: flex; gap: 6px; flex-wrap: wrap; }
 
@@ -275,14 +276,33 @@
 
   /* ---------- Responsive ---------- */
   @media (max-width: 860px) {
-    .app { grid-template-columns: 1fr; }
-    .sidebar { position: static; height: auto; flex-direction: column; }
-    .nav { display: flex; flex-wrap: nowrap; overflow-x: auto; padding: 8px 10px; gap: 4px; }
-    .nav-item { width: auto; white-space: nowrap; margin-bottom: 0; flex: none; }
-    .nav-item .badge { margin-left: 6px; }
-    .content { padding: 22px 18px 70px; }
+    .app { display: block; grid-template-columns: 1fr; }
+    .sidebar { position: static; height: auto; flex-direction: column; border-right: none; border-bottom: 1px solid var(--border); }
+    .brand { padding: 12px 16px 8px; }
+    .brand-name { font-size: 1.18rem; }
+    .trip-switch { padding: 10px 14px; border-bottom: none; }
+    .sidebar-foot { padding: 4px 14px 12px; border-top: none; }
+
+    /* nav becomes a fixed bottom tab bar */
+    .nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
+      display: flex; flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden;
+      gap: 2px; padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px));
+      background: var(--surface); border-top: 1px solid var(--border);
+      box-shadow: 0 -2px 14px rgba(0,0,0,.07); -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+    .nav::-webkit-scrollbar { display: none; }
+    .nav-item { flex: none; width: auto; min-width: 60px; flex-direction: column; gap: 3px;
+      white-space: nowrap; margin-bottom: 0; padding: 7px 10px 5px; text-align: center;
+      align-items: center; justify-content: flex-start; font-size: .64rem; position: relative; border-radius: 12px; }
+    .nav-item svg { width: 21px; height: 21px; }
+    .nav-full { display: none; }
+    .nav-short { display: block; line-height: 1.1; }
+    .nav-item .badge, .nav-item.active .badge { position: absolute; top: 1px; right: 6px; margin: 0;
+      background: var(--accent); color: var(--surface); font-size: .58rem; padding: 0 5px;
+      min-width: 15px; line-height: 15px; height: 15px; border-radius: 20px; }
+    .content { padding: 20px 18px calc(96px + env(safe-area-inset-bottom, 0px)); }
     .cols-4, .cols-3, .cols-2 { grid-template-columns: repeat(2, 1fr); }
     .page-head h2 { font-size: 1.55rem; }
+    .toast-wrap { bottom: calc(82px + env(safe-area-inset-bottom, 0px)); }
   }
   @media (max-width: 520px) {
     .cols-4, .cols-3, .cols-2 { grid-template-columns: 1fr; }
@@ -332,12 +352,12 @@
   const NAV = [
     { id: "overview", label: "Overview", icon: I.overview },
     { id: "weather", label: "Weather", icon: I.weather },
-    { id: "meals", label: "Meals & Menu", icon: I.meals },
+    { id: "meals", label: "Meals & Menu", short: "Meals", icon: I.meals },
     { id: "shopping", label: "Shopping", icon: I.shopping },
     { id: "roles", label: "Roles", icon: I.roles },
     { id: "schedule", label: "Schedule", icon: I.schedule },
     { id: "packing", label: "Packing", icon: I.packing },
-    { id: "guests", label: "Guests & Carpool", icon: I.guests },
+    { id: "guests", label: "Guests & Carpool", short: "Guests", icon: I.guests },
     { id: "budget", label: "Budget", icon: I.budget },
     { id: "notes", label: "Notes", icon: I.notes },
   ];
@@ -653,6 +673,12 @@
       '<div class="app">' + renderSidebar(trip) +
       '<div class="main"><div class="content" id="content"></div></div></div>';
     renderSection();
+    scrollNavToActive();
+  }
+  function scrollNavToActive() {
+    if (!(window.matchMedia && window.matchMedia("(max-width: 860px)").matches)) return;
+    const act = document.querySelector(".nav-item.active");
+    if (act) { try { act.scrollIntoView({ block: "nearest", inline: "center" }); } catch (e) {} }
   }
 
   function counts(trip) {
@@ -687,7 +713,7 @@
       '</div>' +
       '<nav class="nav">' + NAV.map(n => {
         const badge = c[n.id] ? '<span class="badge num">'+c[n.id]+'</span>' : "";
-        return '<button class="nav-item'+(ui.section===n.id?" active":"")+'" data-action="nav" data-section="'+n.id+'">'+n.icon+'<span>'+n.label+'</span>'+badge+'</button>';
+        return '<button class="nav-item'+(ui.section===n.id?" active":"")+'" data-action="nav" data-section="'+n.id+'">'+n.icon+'<span class="nav-full">'+n.label+'</span><span class="nav-short">'+(n.short||n.label)+'</span>'+badge+'</button>';
       }).join("") + '</nav>' +
       '<div class="sidebar-foot">' +
         '<button class="btn sm" data-action="export" title="Download a backup">'+I.download+' Export</button>' +
