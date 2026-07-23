@@ -166,6 +166,14 @@
   .stat .val { font-family: var(--font-display); font-size: 2rem; line-height: 1.1; margin-top: 6px; letter-spacing: -.02em; }
   .stat .sub { font-size: .82rem; color: var(--muted); margin-top: 4px; }
 
+  .cd-ring { position: relative; width: 120px; height: 120px; margin: 2px auto 0; }
+  .cd-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .cd-track { fill: none; stroke: var(--surface-2); stroke-width: 9; }
+  .cd-arc { fill: none; stroke: var(--ember); stroke-width: 9; stroke-linecap: round; transition: stroke-dashoffset .7s ease; }
+  .cd-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+  .cd-num { font-family: var(--font-display); font-size: 2.4rem; line-height: 1; color: var(--ember); letter-spacing: -.02em; }
+  .cd-unit { font-family: var(--font-mono); font-size: .6rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+
   /* pills */
   .pill { display: inline-flex; align-items: center; gap: 5px; padding: 2px 9px; border-radius: 20px;
     font-size: .74rem; font-weight: 600; font-family: var(--font-mono); letter-spacing: .02em; }
@@ -848,8 +856,7 @@
 
     let html = '<div class="page-head"><div><h2>'+esc(trip.name)+'</h2>' +
       '<p>'+(trip.location?'<span class="label" style="text-transform:none;letter-spacing:0;font-size:.95rem">'+esc(trip.location)+(trip.site?' · '+esc(trip.site):"")+'</span>':"Add a location in trip details") + '</p></div>' +
-      '<div style="text-align:right"><div class="label">'+esc(fmtRange(trip.startDate, trip.endDate)||"No dates set")+'</div>' +
-      '<div style="margin-top:6px"><span class="pill '+pillClass+'"><span class="dot"></span>'+esc(String(du!==null&&du>0?du+" days out":countTitle))+'</span></div></div></div>';
+      '<div style="text-align:right"><div class="label">'+esc(fmtRange(trip.startDate, trip.endDate)||"No dates set")+'</div></div></div>';
 
     // hero stats
     // upcoming meal (next dish on or after today)
@@ -867,8 +874,23 @@
       mealTile = '<div class="card stat"><div class="label">Upcoming meal</div>' +
         '<div class="val" style="font-size:1.35rem;margin-top:8px;color:var(--muted)">—</div><div class="sub">No meals planned yet</div></div>';
     }
+    // countdown ring
+    let cdFrac = 0, cdUnit = "";
+    if (du === null) { cdFrac = 0; cdUnit = ""; }
+    else if (du > 0) { cdFrac = Math.max(0.02, Math.min(1, du / 30)); cdUnit = du === 1 ? "day to go" : "days to go"; }
+    else if (dueEnd >= 0) { cdFrac = 1; cdUnit = "enjoy!"; }
+    else { cdFrac = 1; cdUnit = ""; }
+    const CIRC = 2 * Math.PI * 52;
+    const cdOff = CIRC * (1 - cdFrac);
+    const countdownTile = '<div class="card stat" style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:12px">' +
+      '<div class="cd-ring"><svg viewBox="0 0 120 120">' +
+        '<circle class="cd-track" cx="60" cy="60" r="52"></circle>' +
+        '<circle class="cd-arc" cx="60" cy="60" r="52" style="stroke-dasharray:'+CIRC.toFixed(1)+';stroke-dashoffset:'+cdOff.toFixed(1)+'"></circle>' +
+      '</svg><div class="cd-center"><span class="cd-num">'+countVal+'</span>'+(cdUnit?'<span class="cd-unit">'+esc(cdUnit)+'</span>':"")+'</div></div>' +
+      '<div class="label" style="text-transform:none;letter-spacing:0">'+esc(countSub)+'</div>' +
+    '</div>';
     html += '<div class="grid cols-3 section-block">' +
-      statTile(countTitle, '<span class="num">'+countVal+'</span>', countSub, "ember") +
+      countdownTile +
       statTile("Packing", '<span class="num">'+packPct+'%</span>', packedDone+" of "+packedTotal+" packed", "accent", packPct) +
       mealTile +
     '</div>';
