@@ -734,7 +734,7 @@
       roles: trip.roles.length,
       schedule: trip.schedule.length,
       packing: trip.packing.filter(x=>!x.packed).length,
-      guests: trip.guests.filter(g=>g.rsvp==="Yes").length,
+      guests: trip.people.length,
       budget: trip.budget.length,
       notes: trip.checklist.filter(c=>!c.done).length,
     };
@@ -1197,15 +1197,12 @@
     let html = pageHead("Guests & Carpool", "Who's coming, and who's driving with whom.",
       '<button class="btn" data-action="add-person">'+I.plus+' Add person</button>');
     if (!trip.people.length) return html + emptyState(I.guests, "No one added yet. Add the crew.", "add-person", "Add person");
-    // ensure a guest record per person
-    const rsvpTone = { "Yes":"green", "No":"danger", "Maybe":"warn", "":"muted" };
     html += '<div class="card"><div class="list card-pad" style="padding-top:4px;padding-bottom:4px">';
     trip.people.forEach(p => {
-      const g = trip.guests.find(x => x.personId === p.id) || { personId: p.id, rsvp:"", departure:"", carpool:"", driver:false };
+      const g = trip.guests.find(x => x.personId === p.id) || { personId: p.id, departure:"", carpool:"", driver:false };
       html += '<div class="row-item">' + '<span class="avatar">'+initials(p.name)+'</span>' +
         '<div class="row-main"><div class="row-title">'+esc(p.name)+(g.driver?' <span class="pill info" style="margin-left:6px">Driver</span>':"")+'</div>' +
         '<div class="row-sub">' + (g.departure?'Departs '+esc(g.departure):"") + (g.carpool?(g.departure?' · ':'')+'Carpool: '+esc(g.carpool):"") + (!(g.departure||g.carpool)?'No details yet':"") + '</div></div>' +
-        '<span class="pill '+(rsvpTone[g.rsvp]||"muted")+'">'+esc(g.rsvp||"No reply")+'</span>' +
         '<div class="row-actions"><button class="icon-btn" data-action="edit-guest" data-id="'+p.id+'" title="Edit">'+I.edit+'</button>' +
         '<button class="icon-btn" data-action="del-person" data-id="'+p.id+'" title="Remove person">'+I.trash+'</button></div>' + '</div>';
     });
@@ -1226,7 +1223,6 @@
   }
   function guestFields() {
     return [
-      { key:"rsvp", label:"RSVP", type:"select", options:["Yes","Maybe","No",""].map(v=>({value:v,label:v||"No reply"})) },
       { key:"departure", label:"Departure time", type:"text", placeholder:"e.g. Sun 1 PM" },
       { key:"carpool", label:"Carpool group", type:"datalist", options: (t) => Array.from(new Set((t.guests||[]).map(g=>g.carpool).filter(Boolean))), placeholder:"Pick an existing group or type a new one" },
       { key:"driver", label:"Driver", type:"checkbox", checkLabel:"This person is driving" },
@@ -1444,7 +1440,7 @@
     // guests / people
     "add-person": () => { openForm({ title:"Add person", fields:[{key:"name",label:"Name",type:"text",required:true,placeholder:"First name"}], onSubmit: v => { const t = activeTrip(); const pid = uid(); t.people.push({id:pid, name:v.name}); t.guests.push({id:uid(), personId:pid, rsvp:"Yes", departure:"", carpool:"", driver:false}); save(); logActivity("added "+v.name+" to the crew"); render(); toast(v.name+" added"); } }); },
     "edit-guest": (el) => { const t = activeTrip(); const pid = el.dataset.id; const person = findById(t.people, pid); let g = t.guests.find(x=>x.personId===pid); if(!g){ g = {id:uid(), personId:pid, rsvp:"", departure:"", carpool:"", driver:false}; t.guests.push(g); }
-      openForm({ title:"Edit "+person.name, fields:[{key:"name",label:"Name",type:"text",required:true}].concat(guestFields()), values:Object.assign({name:person.name}, g), onSubmit: v => { person.name = v.name; g.rsvp=v.rsvp; g.departure=v.departure; g.carpool=v.carpool; g.driver=v.driver; save(); logActivity("updated "+person.name+"’s details"); render(); toast("Saved"); } }); },
+      openForm({ title:"Edit "+person.name, fields:[{key:"name",label:"Name",type:"text",required:true}].concat(guestFields()), values:Object.assign({name:person.name}, g), onSubmit: v => { person.name = v.name; g.departure=v.departure; g.carpool=v.carpool; g.driver=v.driver; save(); logActivity("updated "+person.name+"’s details"); render(); toast("Saved"); } }); },
     "del-person": (el) => { const t = activeTrip(); const pid = el.dataset.id; const person = findById(t.people, pid); confirmDialog("Remove "+person.name+"?", "This removes them from the crew and unassigns them from roles, meals and packing.", () => {
         t.people = t.people.filter(p=>p.id!==pid); t.guests = t.guests.filter(g=>g.personId!==pid);
         t.roles.forEach(r=>{ if(r.personId===pid) r.personId=""; }); t.meals.forEach(m=>{ if(m.personId===pid) m.personId=""; }); t.packing.forEach(p=>{ if(p.personId===pid) p.personId=""; });
