@@ -279,6 +279,7 @@
   .field .hint { font-size: .76rem; color: var(--muted); font-weight: 400; }
   .field input, .field select, .field textarea { width: 100%; padding: 9px 11px; border: 1px solid var(--border-strong);
     border-radius: var(--radius-sm); background: var(--surface-2); color: var(--ink); }
+  .field .check { width: 20px; height: 20px; padding: 0; flex: none; }
   .field textarea { resize: vertical; min-height: 72px; }
   .field input:focus, .field select:focus, .field textarea:focus { outline: 2px solid var(--accent); outline-offset: 0; border-color: var(--accent); }
   .chips { display: flex; flex-wrap: wrap; gap: 7px; }
@@ -678,6 +679,12 @@
       inner = '<label style="display:flex;align-items:center;gap:9px;font-weight:400;cursor:pointer">' +
         '<input type="checkbox" '+name+' class="check"'+(val?" checked":"")+'> '+esc(f.checkLabel||"")+'</label>';
       return '<div class="field">'+inner+(f.hint?'<span class="hint">'+esc(f.hint)+'</span>':"")+'</div>';
+    }
+    else if (f.type === "datalist") {
+      const dlopts = (typeof f.options === "function" ? f.options(trip) : f.options) || [];
+      const listId = "dl_" + f.key;
+      inner = '<input type="text" '+name+' value="'+esc(val)+'" placeholder="'+esc(f.placeholder||"")+'" list="'+listId+'" autocomplete="off">' +
+        '<datalist id="'+listId+'">' + dlopts.map(o => '<option value="'+esc(o)+'"></option>').join("") + '</datalist>';
     }
     else inner = '<input type="'+(f.type||"text")+'" '+name+' value="'+esc(val)+'" placeholder="'+esc(f.placeholder||"")+'"'+(f.type==="number"?' step="0.01"':"")+'>';
     return '<div class="field'+(f.row?" ":"")+'"><label>'+esc(f.label)+(f.required?' <span style="color:var(--danger)">*</span>':"")+'</label>'+inner+(f.hint?'<span class="hint">'+esc(f.hint)+'</span>':"")+'</div>';
@@ -1175,8 +1182,10 @@
   function filterBar(trip, pageKey, set) {
     if (!(trip.people || []).length) return "";
     const chip = (label, val, on) => '<button class="chip-toggle'+(on?" on":"")+'" data-action="filter-toggle" data-page="'+pageKey+'" data-val="'+val+'">'+esc(label)+'</button>';
+    const mid = myPersonId(trip);
     let html = '<div class="filterbar"><span class="flabel">Filter by</span>';
     html += chip("All", "__all__", set.size === 0);
+    if (mid) html += chip("Just mine", "__mine__", set.size === 1 && set.has(mid));
     trip.people.forEach(p => { html += chip(p.name, p.id, set.has(p.id)); });
     html += chip("Unassigned", "__none__", set.has("__none__"));
     html += '</div>';
@@ -1192,10 +1201,10 @@
     const rsvpTone = { "Yes":"green", "No":"danger", "Maybe":"warn", "":"muted" };
     html += '<div class="card"><div class="list card-pad" style="padding-top:4px;padding-bottom:4px">';
     trip.people.forEach(p => {
-      const g = trip.guests.find(x => x.personId === p.id) || { personId: p.id, rsvp:"", arrival:"", contact:"", carpool:"", driver:false };
+      const g = trip.guests.find(x => x.personId === p.id) || { personId: p.id, rsvp:"", departure:"", carpool:"", driver:false };
       html += '<div class="row-item">' + '<span class="avatar">'+initials(p.name)+'</span>' +
         '<div class="row-main"><div class="row-title">'+esc(p.name)+(g.driver?' <span class="pill info" style="margin-left:6px">Driver</span>':"")+'</div>' +
-        '<div class="row-sub">' + (g.arrival?'Arrives '+esc(g.arrival):"") + (g.carpool?(g.arrival?' · ':'')+'Carpool: '+esc(g.carpool):"") + (g.contact?(g.arrival||g.carpool?' · ':'')+esc(g.contact):"") + (!(g.arrival||g.carpool||g.contact)?'No details yet':"") + '</div></div>' +
+        '<div class="row-sub">' + (g.departure?'Departs '+esc(g.departure):"") + (g.carpool?(g.departure?' · ':'')+'Carpool: '+esc(g.carpool):"") + (!(g.departure||g.carpool)?'No details yet':"") + '</div></div>' +
         '<span class="pill '+(rsvpTone[g.rsvp]||"muted")+'">'+esc(g.rsvp||"No reply")+'</span>' +
         '<div class="row-actions"><button class="icon-btn" data-action="edit-guest" data-id="'+p.id+'" title="Edit">'+I.edit+'</button>' +
         '<button class="icon-btn" data-action="del-person" data-id="'+p.id+'" title="Remove person">'+I.trash+'</button></div>' + '</div>';
@@ -1218,9 +1227,8 @@
   function guestFields() {
     return [
       { key:"rsvp", label:"RSVP", type:"select", options:["Yes","Maybe","No",""].map(v=>({value:v,label:v||"No reply"})) },
-      { key:"arrival", label:"Arrival", type:"text", placeholder:"e.g. Fri afternoon", row:true },
-      { key:"carpool", label:"Carpool group", type:"text", placeholder:"e.g. Eric's car" },
-      { key:"contact", label:"Contact", type:"text", placeholder:"Phone / email (optional)" },
+      { key:"departure", label:"Departure time", type:"text", placeholder:"e.g. Sun 1 PM" },
+      { key:"carpool", label:"Carpool group", type:"datalist", options: (t) => Array.from(new Set((t.guests||[]).map(g=>g.carpool).filter(Boolean))), placeholder:"Pick an existing group or type a new one" },
       { key:"driver", label:"Driver", type:"checkbox", checkLabel:"This person is driving" },
     ];
   }
@@ -1401,7 +1409,11 @@
     "removebringer-pack": (el) => { const p = findById(activeTrip().packing, el.dataset.id); if (!p) return; if (!Array.isArray(p.personIds)) p.personIds = p.personId ? [p.personId] : []; p.personIds = p.personIds.filter(x => x !== el.dataset.person); delete p.personId; save(); render(); },
     "addassign-shop": (el) => { const s = findById(activeTrip().shopping, el.dataset.id); if (!s || !el.value) return; if (!Array.isArray(s.assignedIds)) s.assignedIds = []; if (s.assignedIds.indexOf(el.value) < 0) { s.assignedIds.push(el.value); save(); logActivity(personName(activeTrip(),el.value)+" is assigned to get “"+s.item+"”"); } render(); },
     "removeassign-shop": (el) => { const s = findById(activeTrip().shopping, el.dataset.id); if (!s) return; if (!Array.isArray(s.assignedIds)) s.assignedIds = []; s.assignedIds = s.assignedIds.filter(x => x !== el.dataset.person); save(); render(); },
-    "filter-toggle": (el) => { const set = el.dataset.page === "packing" ? filterPacking : filterShopping; const val = el.dataset.val; if (val === "__all__") set.clear(); else { if (set.has(val)) set.delete(val); else set.add(val); } render(); },
+    "filter-toggle": (el) => { const set = el.dataset.page === "packing" ? filterPacking : filterShopping; const val = el.dataset.val;
+      if (val === "__all__") set.clear();
+      else if (val === "__mine__") { const mid = myPersonId(activeTrip()); if (!mid) { ensureIdentity(true); return; } if (set.size === 1 && set.has(mid)) set.clear(); else { set.clear(); set.add(mid); } }
+      else { if (set.has(val)) set.delete(val); else set.add(val); }
+      render(); },
     "toggle-cat": (el) => { const k = el.dataset.key; collapsedCats[k] = !collapsedCats[k]; render(); },
     "assign-meal": (el) => { const m = findById(activeTrip().meals, el.dataset.id); if (m) { m.personId = el.value; save(); logActivity("set the cook for “"+m.name+"” to "+(personName(activeTrip(),el.value)||"nobody")); render(); } },
     "clear-got": () => { const t = activeTrip(); const n = t.shopping.filter(x=>x.gotIt).length; if(!n){toast("Nothing checked");return;} confirmDialog("Clear checked items", "Remove "+n+" checked item"+(n===1?"":"s")+" from the list?", () => { t.shopping = t.shopping.filter(x=>!x.gotIt); save(); logActivity("cleared checked shopping items"); render(); toast("Cleared"); }, "Clear"); },
@@ -1430,9 +1442,9 @@
     "seed-mypack": () => { const t = activeTrip(); if (!whoAmI()) { ensureIdentity(true); return; } const list = myPersonalList(t); personalStarter().forEach(it => list.push(it)); save(); logActivity("started a personal packing list"); render(); toast("Starter list added"); },
 
     // guests / people
-    "add-person": () => { openForm({ title:"Add person", fields:[{key:"name",label:"Name",type:"text",required:true,placeholder:"First name"}], onSubmit: v => { const t = activeTrip(); const pid = uid(); t.people.push({id:pid, name:v.name}); t.guests.push({id:uid(), personId:pid, rsvp:"Yes", arrival:"", contact:"", carpool:"", driver:false}); save(); logActivity("added "+v.name+" to the crew"); render(); toast(v.name+" added"); } }); },
-    "edit-guest": (el) => { const t = activeTrip(); const pid = el.dataset.id; const person = findById(t.people, pid); let g = t.guests.find(x=>x.personId===pid); if(!g){ g = {id:uid(), personId:pid, rsvp:"", arrival:"", contact:"", carpool:"", driver:false}; t.guests.push(g); }
-      openForm({ title:"Edit "+person.name, fields:[{key:"name",label:"Name",type:"text",required:true}].concat(guestFields()), values:Object.assign({name:person.name}, g), onSubmit: v => { person.name = v.name; g.rsvp=v.rsvp; g.arrival=v.arrival; g.carpool=v.carpool; g.contact=v.contact; g.driver=v.driver; save(); logActivity("updated "+person.name+"’s details"); render(); toast("Saved"); } }); },
+    "add-person": () => { openForm({ title:"Add person", fields:[{key:"name",label:"Name",type:"text",required:true,placeholder:"First name"}], onSubmit: v => { const t = activeTrip(); const pid = uid(); t.people.push({id:pid, name:v.name}); t.guests.push({id:uid(), personId:pid, rsvp:"Yes", departure:"", carpool:"", driver:false}); save(); logActivity("added "+v.name+" to the crew"); render(); toast(v.name+" added"); } }); },
+    "edit-guest": (el) => { const t = activeTrip(); const pid = el.dataset.id; const person = findById(t.people, pid); let g = t.guests.find(x=>x.personId===pid); if(!g){ g = {id:uid(), personId:pid, rsvp:"", departure:"", carpool:"", driver:false}; t.guests.push(g); }
+      openForm({ title:"Edit "+person.name, fields:[{key:"name",label:"Name",type:"text",required:true}].concat(guestFields()), values:Object.assign({name:person.name}, g), onSubmit: v => { person.name = v.name; g.rsvp=v.rsvp; g.departure=v.departure; g.carpool=v.carpool; g.driver=v.driver; save(); logActivity("updated "+person.name+"’s details"); render(); toast("Saved"); } }); },
     "del-person": (el) => { const t = activeTrip(); const pid = el.dataset.id; const person = findById(t.people, pid); confirmDialog("Remove "+person.name+"?", "This removes them from the crew and unassigns them from roles, meals and packing.", () => {
         t.people = t.people.filter(p=>p.id!==pid); t.guests = t.guests.filter(g=>g.personId!==pid);
         t.roles.forEach(r=>{ if(r.personId===pid) r.personId=""; }); t.meals.forEach(m=>{ if(m.personId===pid) m.personId=""; }); t.packing.forEach(p=>{ if(p.personId===pid) p.personId=""; });
@@ -1566,6 +1578,7 @@
   /* ================= IDENTITY (who is editing) ================= */
   function whoAmI() { try { return localStorage.getItem("bc.who") || ""; } catch (e) { return ""; } }
   function setWho(n) { try { localStorage.setItem("bc.who", n); } catch (e) {} }
+  function myPersonId(trip) { const who = whoAmI(); if (!who) return ""; const p = (trip.people || []).find(x => x.name === who); return p ? p.id : ""; }
   let identityPrompted = false;
   function ensureIdentity(force) {
     if (!force && whoAmI()) return;
