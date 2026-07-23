@@ -217,6 +217,14 @@
   .inline-select:hover { border-color: var(--accent); }
   .inline-select:focus { outline: 2px solid var(--accent); outline-offset: 0; border-color: var(--accent); }
 
+  .bringers { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: flex-end; }
+  .bringer { display: inline-flex; align-items: center; gap: 2px; background: var(--accent-soft); color: var(--accent-ink);
+    border-radius: 20px; padding: 3px 4px 3px 11px; font-size: .78rem; font-weight: 600; }
+  .bringer .bx { border: none; background: none; color: var(--accent-ink); cursor: pointer; font-size: 1.05rem;
+    line-height: 1; padding: 0 3px; opacity: .55; }
+  .bringer .bx:hover { opacity: 1; }
+  .bringer-add { max-width: 170px; }
+
   .day-head { display: flex; align-items: baseline; gap: 10px; margin: 22px 0 10px; }
   .day-head h4 { font-family: var(--font-display); font-size: 1.15rem; }
 
@@ -818,11 +826,25 @@
       '<div style="margin-top:6px"><span class="pill '+pillClass+'"><span class="dot"></span>'+esc(String(du!==null&&du>0?du+" days out":countTitle))+'</span></div></div></div>';
 
     // hero stats
-    html += '<div class="grid cols-4 section-block">' +
+    // upcoming meal (next dish on or after today)
+    const sortedMeals = trip.meals.filter(m => m.name).slice().sort((a, b) =>
+      (a.day||"").localeCompare(b.day||"") || (((MEAL_ORDER[a.type]!=null?MEAL_ORDER[a.type]:9)) - ((MEAL_ORDER[b.type]!=null?MEAL_ORDER[b.type]:9))));
+    const nextMeal = sortedMeals.find(m => (m.day||"") >= t) || sortedMeals[0] || null;
+    let mealTile;
+    if (nextMeal) {
+      const when = (nextMeal.day ? fmtDate(nextMeal.day, "dow") : "") + (nextMeal.type ? " · " + nextMeal.type : "");
+      const cook = nextMeal.personId ? ("Cook: " + personName(trip, nextMeal.personId)) : "Cook: TBD";
+      mealTile = '<div class="card stat"><div class="label">Upcoming meal'+(when?" · "+esc(when):"")+'</div>' +
+        '<div class="val" style="font-size:1.35rem;line-height:1.25;margin-top:8px">'+esc(nextMeal.name)+'</div>' +
+        '<div class="sub">'+esc(cook)+'</div></div>';
+    } else {
+      mealTile = '<div class="card stat"><div class="label">Upcoming meal</div>' +
+        '<div class="val" style="font-size:1.35rem;margin-top:8px;color:var(--muted)">—</div><div class="sub">No meals planned yet</div></div>';
+    }
+    html += '<div class="grid cols-3 section-block">' +
       statTile(countTitle, '<span class="num">'+countVal+'</span>', countSub, "ember") +
       statTile("Packing", '<span class="num">'+packPct+'%</span>', packedDone+" of "+packedTotal+" packed", "accent", packPct) +
-      statTile("Meals planned", '<span class="num">'+mealsPlanned+'</span>', "on the menu") +
-      statTile("Going", '<span class="num">'+guestsYes+'</span>', "confirmed of "+trip.people.length) +
+      mealTile +
     '</div>';
 
     html += '<div class="grid cols-2">';
@@ -1066,7 +1088,7 @@
         html += '<div class="row-item'+(p.packed?" done":"")+'">' +
           '<input type="checkbox" class="check" '+(p.packed?"checked":"")+' data-action="'+toggleAction+'" data-id="'+p.id+'">' +
           '<div class="row-main"><div class="row-title">'+esc(p.item)+'</div></div>' +
-          (showBringing ? '<span class="assign-wrap"><span class="label">Bringing</span>'+personSelectInline(trip, p.personId, "assign-pack", p.id)+'</span>' : "") +
+          (showBringing ? bringersControl(trip, p) : "") +
           '<div class="row-actions"><button class="icon-btn" data-action="'+editAction+'" data-id="'+p.id+'" title="Edit">'+I.edit+'</button>' +
           '<button class="icon-btn" data-action="'+delAction+'" data-id="'+p.id+'" title="Delete">'+I.trash+'</button></div></div>';
       });
@@ -1107,9 +1129,20 @@
     const cats = ["Shelter & Sleep","Kitchen & Cooking","Clothing","Personal & Health","Tools & Extras","Fun","Other"];
     return [
       { key:"item", label:"Item", type:"text", required:true, placeholder:"e.g. Sleeping bag" },
-      { key:"category", label:"Category", type:"select", options: cats },
-      { key:"personId", label:"Who's bringing it", type:"person" },
+      { key:"category", label:"Category", type:"select", options: cats, hint:"Assign who's bringing it on the list (more than one person can)." },
     ];
+  }
+  function bringersControl(trip, p) {
+    const ids = Array.isArray(p.personIds) ? p.personIds : (p.personId ? [p.personId] : []);
+    const chips = ids.map(id => {
+      const n = personName(trip, id); if (!n) return "";
+      return '<span class="bringer" title="'+esc(n)+'">'+esc(n)+'<button class="bx" data-action="removebringer-pack" data-id="'+p.id+'" data-person="'+id+'" title="Remove '+esc(n)+'">×</button></span>';
+    }).join("");
+    const remaining = (trip.people || []).filter(pp => ids.indexOf(pp.id) < 0);
+    const addSel = '<select class="inline-select bringer-add" data-action="addbringer-pack" data-id="'+p.id+'" aria-label="Add someone bringing this">' +
+      '<option value="">'+(ids.length ? "+ Add" : "+ Who's bringing?")+'</option>' +
+      remaining.map(pp => '<option value="'+pp.id+'">'+esc(pp.name)+'</option>').join("") + '</select>';
+    return '<div class="bringers">'+chips+addSel+'</div>';
   }
 
   /* ---------- Guests & Carpool ---------- */
@@ -1326,6 +1359,8 @@
     "toggle-shop": (el) => { const s = findById(activeTrip().shopping, el.dataset.id); s.gotIt = el.checked; save(); logActivity((el.checked?"bought":"un-checked")+" “"+s.item+"”"); render(); if (el.checked && !(Number(s.price) > 0) && activeTrip().people.length) openShopPrice(s); },
     "shop-price": (el) => { const s = findById(activeTrip().shopping, el.dataset.id); if (s) openShopPrice(s); },
     "assign-pack": (el) => { const p = findById(activeTrip().packing, el.dataset.id); if (p) { p.personId = el.value; save(); logActivity("set “"+p.item+"” to be brought by "+(personName(activeTrip(),el.value)||"nobody")); render(); } },
+    "addbringer-pack": (el) => { const p = findById(activeTrip().packing, el.dataset.id); if (!p || !el.value) return; if (!Array.isArray(p.personIds)) p.personIds = p.personId ? [p.personId] : []; if (p.personIds.indexOf(el.value) < 0) { p.personIds.push(el.value); delete p.personId; save(); logActivity(personName(activeTrip(),el.value)+" is also bringing “"+p.item+"”"); } render(); },
+    "removebringer-pack": (el) => { const p = findById(activeTrip().packing, el.dataset.id); if (!p) return; if (!Array.isArray(p.personIds)) p.personIds = p.personId ? [p.personId] : []; p.personIds = p.personIds.filter(x => x !== el.dataset.person); delete p.personId; save(); render(); },
     "assign-meal": (el) => { const m = findById(activeTrip().meals, el.dataset.id); if (m) { m.personId = el.value; save(); logActivity("set the cook for “"+m.name+"” to "+(personName(activeTrip(),el.value)||"nobody")); render(); } },
     "clear-got": () => { const t = activeTrip(); const n = t.shopping.filter(x=>x.gotIt).length; if(!n){toast("Nothing checked");return;} confirmDialog("Clear checked items", "Remove "+n+" checked item"+(n===1?"":"s")+" from the list?", () => { t.shopping = t.shopping.filter(x=>!x.gotIt); save(); logActivity("cleared checked shopping items"); render(); toast("Cleared"); }, "Clear"); },
 
@@ -1669,6 +1704,7 @@
     ["weather","meals","shopping","roles","schedule","packing","guests","budget","checklist","people"].forEach(k => { if (!Array.isArray(t[k])) t[k] = []; });
     if (typeof t.notes !== "string") t.notes = "";
     if (!t.personalPacking || typeof t.personalPacking !== "object" || Array.isArray(t.personalPacking)) t.personalPacking = {};
+    (t.packing || []).forEach(p => { if (!Array.isArray(p.personIds)) p.personIds = p.personId ? [p.personId] : []; });
   }
   function isEditing() {
     const ov = document.getElementById("overlay");
