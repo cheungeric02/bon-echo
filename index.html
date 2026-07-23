@@ -327,6 +327,15 @@
     .page-head h2 { font-size: 1.55rem; }
     .toast-wrap { bottom: calc(82px + env(safe-area-inset-bottom, 0px)); }
   }
+  @media (max-width: 640px) {
+    /* stack inline person/assign controls onto their own line so rows don't cram */
+    .row-item { flex-wrap: wrap; }
+    .row-item .assign-wrap, .row-item .bringers { order: 6; flex: 1 1 100%; margin: 4px 0 0 32px; justify-content: flex-start; }
+    .row-item .assign-wrap .inline-select, .bringers .bringer-add { flex: 1 1 auto; max-width: none; }
+    .meal-item { align-items: flex-start; }
+    .meal-item .assign-wrap { margin-left: 84px; }
+    .meal-item > .pill { margin-top: 2px; }
+  }
   @media (max-width: 520px) {
     .cols-4, .cols-3, .cols-2 { grid-template-columns: 1fr; }
     .field.row2 { grid-template-columns: 1fr; }
@@ -953,7 +962,7 @@
       html += '<div class="day-head"><h4>'+esc(day?fmtDate(day,"long"):"Unscheduled")+'</h4></div>';
       html += '<div class="card"><div class="list card-pad" style="padding-top:4px;padding-bottom:4px">';
       meals.forEach(m => {
-        html += '<div class="row-item">' +
+        html += '<div class="row-item meal-item">' +
           '<span class="pill green" style="min-width:74px;justify-content:center">'+esc(m.type||"Meal")+'</span>' +
           '<div class="row-main"><div class="row-title">'+esc(m.name||"(unnamed)")+'</div>' +
           (m.notes?'<div class="row-sub">'+esc(m.notes)+'</div>':"") + '</div>' +
