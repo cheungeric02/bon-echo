@@ -545,7 +545,7 @@
   function blankTrip(name) {
     return { id: uid(), name: name || "New Trip", location: "", site: "", startDate: "", endDate: "",
       people: [], weather: [], meals: [], shopping: [], roles: [], schedule: [], packing: [],
-      guests: [], budget: [], notes: "", checklist: [] };
+      guests: [], budget: [], notes: "", checklist: [], personalPacking: {} };
   }
 
   function init() {
@@ -720,8 +720,6 @@
     const live = !!(window.BCsync && window.BCsync.ready);
     const themeLabel = { auto: "Auto", light: "Light", dark: "Dark" }[state.theme||"auto"];
     return '<aside class="sidebar">' +
-      '<div class="brand"><div class="brand-mark">'+I.logo+'<div><div class="brand-name">Basecamp</div>' +
-        '<div class="brand-sub label">Trip Command Center</div></div></div></div>' +
       '<div class="trip-switch">' +
         '<select data-action="switch-trip" aria-label="Active trip">' +
           state.trips.map(t => '<option value="'+t.id+'"'+(t.id===trip.id?" selected":"")+'>'+esc(t.name)+'</option>').join("") +
@@ -1037,27 +1035,72 @@
   }
 
   /* ---------- Packing ---------- */
-  function secPacking(trip) {
-    const total = trip.packing.length, done = trip.packing.filter(x=>x.packed).length;
-    const pct = total ? Math.round(done/total*100) : 0;
-    let html = pageHead("Packing List", done+" of "+total+" packed.", addBtn("add-pack","Add item"));
-    if (!trip.packing.length) return html + emptyState(I.packing, "Empty list. Add what needs to come along.", "add-pack", "Add first item");
-    html += '<div class="card card-pad section-block"><div style="display:flex;justify-content:space-between;margin-bottom:8px"><span class="label">Overall progress</span><span class="num" style="font-weight:600">'+pct+'%</span></div><div class="progress"><span style="width:'+pct+'%"></span></div></div>';
+  const PERSONAL_CATS = ["Clothing","Toiletries","Health & Meds","Electronics","Documents","Other"];
+  function myPersonalList(trip) {
+    const who = whoAmI(); if (!who) return null;
+    if (!trip.personalPacking || typeof trip.personalPacking !== "object" || Array.isArray(trip.personalPacking)) trip.personalPacking = {};
+    if (!Array.isArray(trip.personalPacking[who])) trip.personalPacking[who] = [];
+    return trip.personalPacking[who];
+  }
+  function personalStarter() {
+    const mk = (item, category) => ({ id: uid(), item: item, category: category, packed: false });
+    return [
+      mk("Underwear (x3+)","Clothing"), mk("Socks (x3+)","Clothing"), mk("T-shirts","Clothing"),
+      mk("Shorts / pants","Clothing"), mk("Warm layer / hoodie","Clothing"), mk("Pyjamas","Clothing"),
+      mk("Swimsuit","Clothing"), mk("Rain jacket","Clothing"), mk("Hat & sunglasses","Clothing"),
+      mk("Toothbrush & toothpaste","Toiletries"), mk("Deodorant","Toiletries"), mk("Shampoo / soap","Toiletries"),
+      mk("Personal towel","Toiletries"), mk("Sunscreen","Toiletries"), mk("Bug spray","Toiletries"),
+      mk("Personal medications","Health & Meds"), mk("Phone & charger","Electronics"), mk("Power bank","Electronics"),
+      mk("ID / health card","Documents"), mk("Cash","Documents")
+    ];
+  }
+  function packingCategoryBlocks(list, toggleAction, editAction, delAction, trip, showBringing) {
+    let html = "";
     const cats = {};
-    trip.packing.forEach(p => { const c = p.category||"Other"; (cats[c]=cats[c]||[]).push(p); });
+    list.forEach(p => { const c = p.category || "Other"; (cats[c] = cats[c] || []).push(p); });
     Object.keys(cats).forEach(cat => {
       const items = cats[cat];
       html += '<div class="day-head"><h4>'+esc(cat)+'</h4><span class="label">'+items.filter(i=>i.packed).length+'/'+items.length+'</span></div>';
       html += '<div class="card"><div class="list card-pad" style="padding-top:4px;padding-bottom:4px">';
       items.forEach(p => {
         html += '<div class="row-item'+(p.packed?" done":"")+'">' +
-          '<input type="checkbox" class="check" '+(p.packed?"checked":"")+' data-action="toggle-pack" data-id="'+p.id+'">' +
+          '<input type="checkbox" class="check" '+(p.packed?"checked":"")+' data-action="'+toggleAction+'" data-id="'+p.id+'">' +
           '<div class="row-main"><div class="row-title">'+esc(p.item)+'</div></div>' +
-          '<span class="assign-wrap"><span class="label">Bringing</span>'+personSelectInline(trip, p.personId, "assign-pack", p.id)+'</span>' +
-          rowActions("edit-pack","del-pack",p.id) + '</div>';
+          (showBringing ? '<span class="assign-wrap"><span class="label">Bringing</span>'+personSelectInline(trip, p.personId, "assign-pack", p.id)+'</span>' : "") +
+          '<div class="row-actions"><button class="icon-btn" data-action="'+editAction+'" data-id="'+p.id+'" title="Edit">'+I.edit+'</button>' +
+          '<button class="icon-btn" data-action="'+delAction+'" data-id="'+p.id+'" title="Delete">'+I.trash+'</button></div></div>';
       });
       html += '</div></div>';
     });
+    return html;
+  }
+  function progressCard(label, done, total) {
+    const pct = total ? Math.round(done/total*100) : 0;
+    return '<div class="card card-pad" style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;margin-bottom:8px"><span class="label">'+esc(label)+'</span><span class="num" style="font-weight:600">'+done+' / '+total+'</span></div><div class="progress"><span style="width:'+pct+'%"></span></div></div>';
+  }
+  function secPacking(trip) {
+    let html = pageHead("Packing", "Your personal bag, plus the shared group gear.", "");
+    const who = whoAmI();
+
+    // ----- Personal list (per logged-in person) -----
+    html += '<div class="section-title" style="margin-top:2px"><div><h3>Your personal list'+(who?' · '+esc(who):"")+'</h3><div class="label">Only you see &amp; edit this — clothing, toiletries, etc.</div></div>'+(who?'<button class="btn primary" data-action="add-mypack">'+I.plus+' Add</button>':"")+'</div>';
+    if (!who) {
+      html += '<div class="card card-pad empty">'+I.packing+'<p>Pick who you are to use your own personal packing list.</p><button class="btn primary" data-action="change-who" style="margin:0 auto">Choose your name</button></div>';
+    } else {
+      const mine = myPersonalList(trip);
+      if (!mine.length) {
+        html += '<div class="card card-pad empty">'+I.packing+'<p>Your personal list is empty.</p><div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap"><button class="btn primary" data-action="seed-mypack">Use a starter list</button><button class="btn" data-action="add-mypack">Add an item</button></div></div>';
+      } else {
+        html += progressCard("Your progress", mine.filter(x=>x.packed).length, mine.length);
+        html += packingCategoryBlocks(mine, "toggle-mypack", "edit-mypack", "del-mypack", trip, false);
+      }
+    }
+
+    // ----- Shared/group list (everyone contributes) -----
+    html += '<div class="section-title" style="margin-top:28px"><div><h3>Group packing (shared)</h3><div class="label">Everyone contributes — assign who brings each thing.</div></div><button class="btn" data-action="add-pack">'+I.plus+' Add</button></div>';
+    if (!trip.packing.length) return html + emptyState(I.packing, "No shared gear yet.", "add-pack", "Add item");
+    html += progressCard("Group progress", trip.packing.filter(x=>x.packed).length, trip.packing.length);
+    html += packingCategoryBlocks(trip.packing, "toggle-pack", "edit-pack", "del-pack", trip, true);
     return html;
   }
   function packFields() {
@@ -1129,10 +1172,10 @@
 
     // settle up (includes shopping)
     const settle = computeSettle(trip);
-    html += '<div class="section-block"><div class="section-title"><h3>Settle up</h3><span class="label">Fewest transfers</span></div><div class="card card-pad">';
+    html += '<div class="section-block"><div class="section-title"><h3>Settle up</h3><span class="label">'+(settle.length ? settle.length+" payment"+(settle.length===1?"":"s") : "Fewest transfers")+'</span></div><div class="card card-pad">';
     if (!itemCount) html += '<p style="color:var(--muted);margin:0">Add an expense, or price a bought shopping item, to see who owes whom.</p>';
     else if (!settle.length) html += '<p style="color:var(--accent-ink);margin:0">All square — everyone\'s even.</p>';
-    else html += settle.map(s => '<div class="settle"><span class="avatar">'+initials(s.fromName)+'</span><span>'+esc(s.fromName)+'</span>' +
+    else html += '<p class="row-sub" style="margin:0 0 12px">Balances are netted to the fewest possible transfers — nobody both pays and gets paid.</p>' + settle.map(s => '<div class="settle"><span class="avatar">'+initials(s.fromName)+'</span><span>'+esc(s.fromName)+'</span>' +
       '<span class="arrow">→ pays →</span><span class="avatar">'+initials(s.toName)+'</span><span>'+esc(s.toName)+'</span>' +
       '<span class="amt">'+money(s.amount)+'</span></div>').join("");
     html += '</div></div>';
@@ -1301,6 +1344,13 @@
     "edit-pack": (el) => { const t = activeTrip(); const p = findById(t.packing, el.dataset.id); openForm({ title:"Edit packing item", fields: packFields(), values:p, onSubmit: v => { Object.assign(p, v); save(); logActivity("edited packing item “"+p.item+"”"); render(); } }); },
     "del-pack": (el) => delItem("packing", el.dataset.id, "Remove this item?"),
     "toggle-pack": (el) => { const p = findById(activeTrip().packing, el.dataset.id); p.packed = el.checked; save(); logActivity((el.checked?"packed":"unpacked")+" “"+p.item+"”"); render(); },
+
+    // personal packing (per logged-in person)
+    "add-mypack": () => { const t = activeTrip(); if (!whoAmI()) { ensureIdentity(true); return; } openForm({ title:"Add to your personal list", fields:[{key:"item",label:"Item",type:"text",required:true,placeholder:"e.g. Toothbrush"},{key:"category",label:"Category",type:"select",options:PERSONAL_CATS}], values:{category:"Clothing"}, onSubmit: v => { myPersonalList(t).push({id:uid(), item:v.item, category:v.category, packed:false}); save(); logActivity("added personal item “"+v.item+"”"); render(); toast("Added to your list"); } }); },
+    "edit-mypack": (el) => { const t = activeTrip(); const list = myPersonalList(t); if (!list) return; const p = list.find(x=>x.id===el.dataset.id); if (!p) return; openForm({ title:"Edit personal item", fields:[{key:"item",label:"Item",type:"text",required:true},{key:"category",label:"Category",type:"select",options:PERSONAL_CATS}], values:p, onSubmit: v => { p.item=v.item; p.category=v.category; save(); render(); } }); },
+    "del-mypack": (el) => { const t = activeTrip(); const who = whoAmI(); const list = myPersonalList(t); if (!list) return; const p = list.find(x=>x.id===el.dataset.id); confirmDialog("Remove item", "Remove “"+(p?p.item:"item")+"” from your personal list?", () => { t.personalPacking[who] = list.filter(x=>x.id!==el.dataset.id); save(); render(); toast("Removed"); }); },
+    "toggle-mypack": (el) => { const t = activeTrip(); const list = myPersonalList(t); if (!list) return; const p = list.find(x=>x.id===el.dataset.id); if (p) { p.packed = el.checked; save(); render(); } },
+    "seed-mypack": () => { const t = activeTrip(); if (!whoAmI()) { ensureIdentity(true); return; } const list = myPersonalList(t); personalStarter().forEach(it => list.push(it)); save(); logActivity("started a personal packing list"); render(); toast("Starter list added"); },
 
     // guests / people
     "add-person": () => { openForm({ title:"Add person", fields:[{key:"name",label:"Name",type:"text",required:true,placeholder:"First name"}], onSubmit: v => { const t = activeTrip(); const pid = uid(); t.people.push({id:pid, name:v.name}); t.guests.push({id:uid(), personId:pid, rsvp:"Yes", arrival:"", contact:"", carpool:"", driver:false}); save(); logActivity("added "+v.name+" to the crew"); render(); toast(v.name+" added"); } }); },
@@ -1618,6 +1668,7 @@
   function ensureShape(t) {
     ["weather","meals","shopping","roles","schedule","packing","guests","budget","checklist","people"].forEach(k => { if (!Array.isArray(t[k])) t[k] = []; });
     if (typeof t.notes !== "string") t.notes = "";
+    if (!t.personalPacking || typeof t.personalPacking !== "object" || Array.isArray(t.personalPacking)) t.personalPacking = {};
   }
   function isEditing() {
     const ov = document.getElementById("overlay");
